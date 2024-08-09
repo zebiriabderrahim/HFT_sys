@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Debug and Release directories
+cmake-build-debug/
+
+# .idea directory
+.idea/
+
+# ds_store files
+.DS_Store
