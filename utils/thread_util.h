@@ -28,7 +28,7 @@
 
 namespace utils {
 
-inline auto set_thread_core_affinity(int core_id) -> bool {
+inline auto setThreadCoreAffinity(int core_id) -> bool {
 
 #if defined(_WIN32) || defined(_WIN64)
     // Windows implementation
@@ -52,15 +52,14 @@ inline auto set_thread_core_affinity(int core_id) -> bool {
 #endif
 }
 
-// Concept to ensure the function is invocable with the given arguments
 template <typename F, typename... Args>
 concept Invocable = std::invocable<F, Args...>;
 
 template <typename F, typename... Args>
     requires Invocable<F, Args...>
-[[nodiscard]] inline auto create_and_start_thread(int core_id, std::string_view name, F &&func, Args &&...args) noexcept -> std::jthread {
+[[nodiscard]] inline auto createAndStartThread(int core_id, std::string_view name, F &&func, Args &&...args) noexcept -> std::jthread {
     auto f = [core_id, name, function = std::forward<F>(func), ... arguments = std::forward<Args>(args)]() mutable {
-        if (core_id >= 0 && !set_thread_core_affinity(core_id)) {
+        if (core_id >= 0 && !setThreadCoreAffinity(core_id)) {
             std::cerr << "Failed to set core affinity for " << name << " " << std::this_thread::get_id() << " to " << core_id << '\n';
             std::terminate();
         }
