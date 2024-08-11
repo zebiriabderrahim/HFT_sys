@@ -14,9 +14,10 @@
 
 inline void assertCondition(bool condition, std::string_view message, std::source_location loc = std::source_location::current()) noexcept {
     if (!condition) [[unlikely]] {
-        std::cerr << "Assertion failed: " << message
+        std::cerr << "Assertion failed: " << message<< std::endl
                   << " in file " << loc.file_name()
-                  << " at line " << loc.line() << std::endl;
+                  << " at line " << loc.line()<< std::endl
+                  << " function " << loc.function_name() <<std::endl;
         std::terminate();
     }
 }
