@@ -30,8 +30,8 @@ template <typename T> class MemoryPool {
     T *allocate(Args &&...args) {
         auto memoryBlock = &(memoryBlocks_[nextFreeIndex_]);
 
-//        assertCondition(memoryBlock->isFree,
-//                        std::format("Expected free MemoryBlock at index:{}", std::to_string(nextFreeIndex_)));
+        assertCondition(memoryBlock->isFree,
+                        std::format("Expected free MemoryBlock at index:{}", std::to_string(nextFreeIndex_)));
 
         T *ret = &(memoryBlock->object);
         ret = new (ret) T(std::forward<Args>(args)...); // placement new.
@@ -42,12 +42,12 @@ template <typename T> class MemoryPool {
     }
 
     void deallocate(const T* elem) noexcept {
-        auto elemIndex = static_cast<size_t>(elem - &(memoryBlocks_[0].object));
+        const auto * elemPtr = reinterpret_cast<const MemoryBlock*>(elem);
+        auto elemIndex = static_cast<std::size_t>(elemPtr - &(memoryBlocks_[0]));
 
-        assertCondition(elemIndex >= 0 && elemIndex < memoryBlocks_.size(),
-                        "Invalid element index.");
+        assertCondition(elemIndex < memoryBlocks_.size(),"Invalid element index.");
         assertCondition(!memoryBlocks_[elemIndex].isFree,
-                        std::format("Expected in-use ObjectBlock at index:{}", std::to_string(elemIndex)));
+                        std::format("Expected in-use MemoryBlock at index:{}", std::to_string(elemIndex)));
 
         memoryBlocks_[elemIndex].isFree = true;
     }
