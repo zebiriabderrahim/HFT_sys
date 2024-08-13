@@ -10,4 +10,7 @@ add_executable(low_latency_trading_app main.cpp
         utils/thread_util.h
         utils/memory_pool.h
         "utils/debug_assertion.h"
-        utils/lock_free_queue.h)
+        utils/lock_free_queue.h
+        utils/time_utils.h
+        utils/Logger.cpp
+        utils/Logger.h)
