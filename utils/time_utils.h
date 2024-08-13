@@ -2,8 +2,8 @@
 // Created by ABDERRAHIM ZEBIRI on 2024-08-11.
 //
 
-#ifndef LOW_LATENCY_TRADING_APP_TIME_H
-#define LOW_LATENCY_TRADING_APP_TIME_H
+#ifndef LOW_LATENCY_TRADING_APP_TIME_UTILS_H
+#define LOW_LATENCY_TRADING_APP_TIME_UTILS_H
 
 #include <string>
 #include <chrono>
@@ -38,4 +38,4 @@ inline auto getCurrentTimeStr() -> std::string {
 
 } // namespace utils
 
-#endif // LOW_LATENCY_TRADING_APP_TIME_H
+#endif // LOW_LATENCY_TRADING_APP_TIME_UTILS_H
