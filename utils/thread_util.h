@@ -50,13 +50,13 @@ inline auto setThreadCoreAffinity(int core_id) -> bool {
     return pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset) == 0;
 #endif
 }
-
+using threadPtr = std::unique_ptr<std::jthread>;
 template <typename F, typename... Args>
 concept Invocable = std::invocable<F, Args...>;
 
 template <typename F, typename... Args>
     requires Invocable<F, Args...>
-[[nodiscard]] inline auto createAndStartThread(int core_id, std::string_view name, F &&func, Args &&...args) noexcept -> std::jthread {
+[[nodiscard]] inline auto createAndStartThread(int core_id, std::string_view name, F &&func, Args &&...args) noexcept -> threadPtr {
     auto f = [core_id, name, function = std::forward<F>(func), ... arguments = std::forward<Args>(args)]() mutable {
         if (core_id >= 0 && !setThreadCoreAffinity(core_id)) {
             std::cerr << "Failed to set core affinity for " << name << " " << std::this_thread::get_id() << " to " << core_id << '\n';
@@ -67,7 +67,7 @@ template <typename F, typename... Args>
 
         std::invoke(function, arguments...);
     };
-    return std::jthread(f);
+    return std::make_unique<std::jthread>(f);
 }
 } // namespace utils
 #endif // LOW_LATENCY_TRADING_APP_THREAD_UTIL_H
