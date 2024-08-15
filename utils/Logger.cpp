@@ -25,9 +25,8 @@ void Logger::flushQueue() noexcept {
     while (running_.load(std::memory_order_acquire)) {
         buffer.clear();
         for (size_t i = 0; i < BATCH_SIZE && logQueue_.size(); ++i) {
-            if (auto next = logQueue_.getNextToRead()) {
+            if (auto next = logQueue_.pop()) {
                 appendToBuffer(*next, buffer);
-                logQueue_.updateReadIndex();
             }
         }
         if (!buffer.empty()) {
@@ -40,35 +39,35 @@ void Logger::writeToFile(const std::string& buffer) {
     try {
         logFile_ << buffer;
         logFile_.flush();
+
+        if (!logFile_ || logFile_.bad()) {
+            throw std::ios_base::failure("Stream error");
+        }
+    } catch (const std::ios_base::failure& e) {
+        std::cerr << "I/O error writing to log file: " << e.what() << std::endl;
+        // You might want to set a flag or take some action to indicate logging failure
+    } catch (const std::system_error& e) {
+        std::cerr << "System error writing to log file: " << e.what()
+                  << " (error code: " << e.code() << ")" << std::endl;
     } catch (const std::exception& e) {
-        // Handle file writing error
-        std::cerr << "Error writing to log file: " << e.what() << std::endl;
+        std::cerr << "Unexpected error writing to log file: " << e.what() << std::endl;
     }
 }
-void Logger::appendToBuffer(const LogElement& elem, std::string& buffer) {
-
+void Logger::appendToBuffer(const LogElement& elem, std::string& buffer) const {
     std::ostringstream oss;
-    oss << getCurrentTimeStr() << " ";
+    oss << "[" <<getCurrentTimeStr() << "]" << " ";
 
     switch (elem.level_) {
         using enum utils::LogLevel;
-    case DEBUG: oss << "[DEBUG] "; break;
-    case INFO: oss << "[INFO] "; break;
+    case DEBUG:   oss << "[DEBUG] "; break;
+    case INFO:    oss << "[INFO] "; break;
     case WARNING: oss << "[WARNING] "; break;
-    case ERROR: oss << "[ERROR] "; break;
+    case ERROR:   oss << "[ERROR] "; break;
     }
 
-    std::visit([&oss](auto&& arg) {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, std::string>) {
-            oss << arg;
-        } else {
-            oss << arg;
-        }
-    }, elem.value);
+    std::visit([&oss](const auto& arg) { oss << arg; }, elem.value);
 
     oss << "\n";
     buffer += oss.str();
 }
-
 } // namespace utils
