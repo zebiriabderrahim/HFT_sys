@@ -18,8 +18,7 @@ auto consumeFunction(LFQueue<MyStruct>* lfq) {
     std::this_thread::sleep_for(5s);
 
     while(lfq->size()) {
-        const auto d = lfq->getNextToRead();
-        lfq->updateReadIndex();
+        auto d = lfq->pop();
 
         std::cout << "consumeFunction read elem:" << d->d_[0] << "," << d->d_[1] << "," << d->d_[2] << " lfq-size:" << lfq->size() << std::endl;
 
@@ -29,41 +28,25 @@ auto consumeFunction(LFQueue<MyStruct>* lfq) {
     std::cout << "consumeFunction exiting." << std::endl;
 }
 
-int main(int, char **) {
-    LFQueue<MyStruct> lfq(20);
+//int main(int, char **) {
+//    LFQueue<MyStruct> lfq(20);
 
-    auto ct = createAndStartThread(-1, "", consumeFunction, &lfq);
+//    auto ct = createAndStartThread(-1, "", consumeFunction, &lfq);
+//
+//    for(auto i = 0; i < 50; ++i) {
+//        const MyStruct d{i, i * 10, i * 100};
+//        lfq.push(d);
+//
+//        std::cout << "main constructed elem:" << d.d_[0] << "," << d.d_[1] << "," << d.d_[2] << " lfq-size:" << lfq.size() << std::endl;
+//
+//        using namespace std::literals::chrono_literals;
+//        std::this_thread::sleep_for(1s);
+//    }
+//
+//    std::cout << "main exiting." << std::endl;
 
-    for(auto i = 0; i < 50; ++i) {
-        const MyStruct d{i, i * 10, i * 100};
-        *(lfq.getNextToWrite()) = d;
-        lfq.updateWriteIndex();
-
-        std::cout << "main constructed elem:" << d.d_[0] << "," << d.d_[1] << "," << d.d_[2] << " lfq-size:" << lfq.size() << std::endl;
-
-        using namespace std::literals::chrono_literals;
-        std::this_thread::sleep_for(1s);
-    }
-
-    std::cout << "main exiting." << std::endl;
-
-    char c = 'd';
-    int i = 3;
-    unsigned long ul = 65;
-    float f = 3.4;
-    double d = 34.56;
-    const char* s = "test C-string";
-    std::string ss = "test string";
-
-    Logger logger("logging_example.log");
-
-    logger.log(LogLevel::INFO,"Logging a char:% an int:% and an unsigned:%\n", c, i, ul);
-    logger.log(LogLevel::INFO,"Logging a float:% and a double:%\n", f, d);
-    logger.log(LogLevel::INFO,"Logging a C-string:'%'\n", s);
-    logger.log(LogLevel::INFO,"Logging a string:'%'\n", ss);
-
-    return 0;
-}
+//    return 0;
+//}
 
 //
 //int main(int, char **) {
@@ -90,3 +73,44 @@ int main(int, char **) {
 //
 //    return 0;
 //}
+
+int main() {
+    try {
+        using enum utils::LogLevel;
+        // Create a logger
+
+        // Log different types of messages
+        LOG_INFO("Starting the application");
+        LOG_DEBUG("Debug message: ", 42);
+        LOG_WARNING("Warning: Float value is ", 3.14f);
+        LOG_ERROR("Error code: ", 404L);
+
+        // Log multiple values in one call
+        LOG_INFO("Mixed types: ", 'A', " ", 123, " ", 45.67);
+
+        // Log a string literal
+        LOG_INFO( "This is a string literal");
+
+        // Log a std::string
+        std::string str = "This is a std::string";
+        LOG_INFO( str);
+
+        // Log some more messages
+        for (int i = 0; i < 10; ++i) {
+            LOG_DEBUG("Iteration ", i);
+        }
+
+        std::cout << "Logging complete. Waiting for logger to finish..." << std::endl;
+
+        // Wait a bit to allow the logger to process all messages
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        std::cout << "Logger test complete. Check test_log.txt for output." << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cerr << "An error occurred: " << e.what() << std::endl;
+        return 1;
+    }
+
+    return 0;
+}
