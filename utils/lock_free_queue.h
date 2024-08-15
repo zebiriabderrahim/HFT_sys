@@ -29,6 +29,29 @@ class LFQueue {
     LFQueue& operator=(const LFQueue&) = delete;
     LFQueue& operator=(LFQueue&&) = delete;
 
+
+    bool push(const T& value) noexcept {
+        auto* slot = getNextToWrite();
+        if (!slot) [[unlikely]] return false;
+        *slot = value;
+        updateWriteIndex();
+        return true;
+    }
+
+    std::optional<T> pop() noexcept {
+        const T* elem = getNextToRead();
+        if (!elem) [[unlikely]] return std::nullopt;
+        T value = *elem;
+        updateReadIndex();
+        return value;
+    }
+
+    [[nodiscard]] auto size() const noexcept -> std::size_t {
+        return numElements_.load(std::memory_order_relaxed);
+    }
+
+  private:
+
     [[nodiscard]] auto getNextToRead() const noexcept -> const T* {
         return numElements_ > 0 ? &queue_[nextIndexToRead_] : nullptr;
     }
@@ -48,11 +71,6 @@ class LFQueue {
         numElements_.fetch_sub(1, std::memory_order_relaxed);
     }
 
-    [[nodiscard]] auto size() const noexcept -> std::size_t {
-        return numElements_.load(std::memory_order_relaxed);
-    }
-
-  private:
     std::atomic<std::size_t> nextIndexToRead_{0};
     std::atomic<std::size_t> nextIndexToWrite_{0};
     std::atomic<std::size_t> numElements_{0};
