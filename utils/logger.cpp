@@ -1,5 +1,6 @@
-#include "Logger.h"
+#include "logger.h"
 #include "time_utils.h"
+#include <format>
 
 namespace utils {
 
@@ -51,19 +52,28 @@ void Logger::writeToFile(const std::string& buffer) {
 }
 
 void Logger::appendToBuffer(const LogElement& elem, std::string& buffer) const {
-    buffer.append("[");
-    buffer.append(getCurrentTimeStr());
-    buffer.append("] [");
-    switch (elem.level) {
-        using enum utils::LogLevel;
-    case DEBUG:   buffer.append("DEBUG"); break;
-    case INFO:    buffer.append("INFO"); break;
-    case WARNING: buffer.append("WARNING"); break;
-    case ERROR:   buffer.append("ERROR"); break;
+    const auto logLevel = [&]() {
+        switch (elem.level) {
+            using enum utils::LogLevel;
+        case DEBUG:
+            return "DEBUG";
+        case INFO:
+            return "INFO";
+        case WARNING:
+            return "WARNING";
+        case ERROR:
+            return "ERROR";
+        }
+    }();
+    buffer.append(std::format("[{}] [{}] ", getCurrentTimeStr(), logLevel));
+
+    if (std::holds_alternative<std::string>(elem.message)) {
+        buffer.append(std::get<std::string>(elem.message));
+    } else {
+        buffer.append(std::get<std::function<std::string()>>(elem.message)());
     }
-    buffer.append("] ");
-    buffer.append(elem.message);
-    buffer.append("\n");
+
+    buffer.push_back('\n');
 }
 
 } // namespace utils

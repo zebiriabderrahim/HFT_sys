@@ -4,8 +4,8 @@
 
 #include "./utils/memory_pool.h"
 #include "./utils/thread_util.h"
-#include "utils/Logger.h"
 #include "utils/lock_free_queue.h"
+#include "utils/logger.h"
 
 struct MyStruct {
     int d_[3];
@@ -80,25 +80,15 @@ int main() {
         // Create a logger
 
         // Log different types of messages
-        LOG_INFO("Starting the application");
-        LOG_DEBUG("Debug message: ", 42);
-        LOG_WARNING("Warning: Float value is ", 3.14f);
-        LOG_ERROR("Error code: ", 404L);
-
-        // Log multiple values in one call
-        LOG_INFO("Mixed types: ", 'A', " ", 123, " ", 45.67);
-
-        // Log a string literal
-        LOG_INFO( "This is a string literal");
-
-        // Log a std::string
-        std::string str = "This is a std::string";
-        LOG_INFO( str);
-
+        LOG_DEBUG("Simple debug message");
+        LOG_INFOF("Formatted info: value = {}", 42);
         // Log some more messages
         for (int i = 0; i < 10; ++i) {
-            LOG_DEBUG("Iteration ", i);
+            LOG_INFOF("Iteration {}", i);
         }
+        std::string result = std::format("The answer is: {}", 42);
+
+        LOG_INFO(result);
 
         std::cout << "Logging complete. Waiting for logger to finish..." << std::endl;
 
