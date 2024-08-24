@@ -12,8 +12,9 @@ add_executable(low_latency_trading_app  main.cpp
                                         utils/debug_assertion.h
                                         utils/lock_free_queue.h
                                         utils/time_utils.h
-        utils/logger.cpp
-        utils/logger.h
-        utils/socket_utils.cpp
-        utils/socket_utils.h
+                                        utils/logger.cpp
+                                        utils/logger.h
+                                        utils/socket_utils.h
+        utils/tcp_socket.cpp
+        utils/tcp_socket.h
 )
