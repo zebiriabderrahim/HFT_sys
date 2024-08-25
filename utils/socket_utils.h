@@ -33,7 +33,7 @@ constexpr int MaxTCPServerBacklog = 1024;
 struct SocketConfig {
     std::string ipAddress;                        ///< IP address of the socket.
     std::string interfaceName;                    ///< Network interface name.
-    std::optional<int> portNumber = std::nullopt; ///< Port number, optional.
+    int portNumber;                               ///< Port number.
     bool useUdp = false;                          ///< Flag indicating if UDP protocol is used.
     bool isListeningMode = false;                 ///< Flag indicating if the socket is in listening mode.
     bool enableTimestamp = false;                 ///< Flag for enabling SO_TIMESTAMP option.
@@ -42,9 +42,9 @@ struct SocketConfig {
      * @brief Convert the socket configuration to a string representation.
      * @return A string detailing the socket configuration.
      */
-    [[nodiscard]] auto toString() const -> std::string {
-        return std::format("Socket_Config[ipAddress:{} interfaceName:{} portNumber:{} useUdp:{} isListeningMode:{} enableTimestamp:{}]", ipAddress,
-                           interfaceName, portNumber.value_or(-1), useUdp, isListeningMode, enableTimestamp);
+    [[nodiscard]] auto toString() const {
+        return std::format("ip:{} interface:{} port:{} udp:{} listening:{} timestamp:{}",
+                           ipAddress, interfaceName, portNumber, useUdp, isListeningMode, enableTimestamp);
     }
 };
 
@@ -55,28 +55,18 @@ struct SocketConfig {
  */
 [[nodiscard]] inline auto getIpAddressForInterface(std::string_view interfaceName) -> std::string {
     char buf[NI_MAXHOST] = {'\0'};
-    struct ifaddrs *ifaddr = nullptr;
 
-    if (getifaddrs(&ifaddr) == -1) {
-        throw std::system_error(errno, std::generic_category(), "Failed to get network interfaces");
-    }
-
-    for (struct ifaddrs *ifa = ifaddr; ifa != nullptr; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr == nullptr)
-            continue;
-
-        if (ifa->ifa_addr->sa_family == AF_INET && interfaceName == ifa->ifa_name) {
-            if (int result = getnameinfo(ifa->ifa_addr, sizeof(struct sockaddr_in), buf, sizeof(buf), nullptr, 0, NI_NUMERICHOST); result != 0) {
-                freeifaddrs(ifaddr);
-                throw std::system_error(result, std::generic_category(), "Failed to get IP address");
+    if (ifaddrs *ifaddr = nullptr; getifaddrs(&ifaddr) != -1) {
+        for (ifaddrs *ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
+            if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET && interfaceName == ifa->ifa_name) {
+                getnameinfo(ifa->ifa_addr, sizeof(sockaddr_in), buf, sizeof(buf), nullptr, 0, NI_NUMERICHOST);
+                break;
             }
-            break;
         }
+        freeifaddrs(ifaddr);
     }
 
-    freeifaddrs(ifaddr);
-    assertCondition(buf[0] != '\0', "No matching interface found or interface has no IPv4 address");
-    return std::string{buf};
+    return buf;
 }
 
 /**
@@ -160,10 +150,9 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
  * @return The file descriptor of the created socket.
  */
 [[nodiscard]] inline auto createSocket(const SocketConfig &socketConfig) -> int {
-    std::string timeStr;
     const auto ip = socketConfig.ipAddress.empty() ? getIpAddressForInterface(socketConfig.interfaceName) : socketConfig.ipAddress;
 
-    LOG_INFOF("Creating socket with configuration: {} " , socketConfig.toString());
+    LOG_INFOF("Creating socket with configuration:{}", socketConfig.toString());
 
     const int inputFlags = (socketConfig.isListeningMode ? AI_PASSIVE : 0) | (AI_NUMERICHOST | AI_NUMERICSERV);
     const addrinfo hints{
@@ -177,8 +166,8 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
         nullptr};
 
     addrinfo *result = nullptr;
-    const auto rc = getaddrinfo(ip.c_str(), std::to_string(socketConfig.portNumber.value_or(0)).c_str(), &hints, &result);
-    assertCondition(rc == 0, "getaddrinfo() failed. error: " + std::string(gai_strerror(rc)) + " errno: " + strerror(errno));
+    const auto rc = getaddrinfo(ip.c_str(), std::to_string(socketConfig.portNumber).c_str(), &hints, &result);
+    assertCondition(!rc, "getaddrinfo() failed. error: " + std::string(gai_strerror(rc)) + " errno: " + strerror(errno));
 
     int socketFd = -1;
     int one = 1;
@@ -193,36 +182,28 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
         }
 
         if (!socketConfig.isListeningMode) {
-            if (connect(socketFd, rp->ai_addr, rp->ai_addrlen) == -1) {
-                close(socketFd);
-                socketFd = -1;
-                continue;
-            }
-        } else {
-            assertCondition(setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) == 0,
-                            "setsockopt() SO_REUSEADDR failed. errno: " + std::string(strerror(errno)));
+           assertCondition(connect(socketFd, rp->ai_addr, rp->ai_addrlen) == -1, "connect() failed. errno: " + std::string(strerror(errno)));
+        }
 
-            sockaddr_in addr{};
-            addr.sin_family = AF_INET;
-            addr.sin_port = htons(socketConfig.portNumber.value());
-            addr.sin_addr.s_addr = INADDR_ANY;
+        if (socketConfig.isListeningMode) {
+            assertCondition(setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&one), sizeof(one)) == 0,
+                            "setsockopt() SO_REUSEADDR failed. errno: " + std::string(strerror(errno)));
+        }
+        if (socketConfig.isListeningMode) {
+            sockaddr_in addr{ AF_INET ,{}, htonl(INADDR_ANY), {} };
+            addr.sin_port = htons(socketConfig.portNumber);
             assertCondition(bind(socketFd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) == 0,
                             "bind() failed. errno: " + std::string(strerror(errno)));
-
-            if (!socketConfig.useUdp) {
-                assertCondition(listen(socketFd, MaxTCPServerBacklog) == 0, "listen() failed. errno: " + std::string(strerror(errno)));
-            }
+        }
+        if (!socketConfig.useUdp && socketConfig.isListeningMode) {
+            assertCondition(listen(socketFd, MaxTCPServerBacklog) == 0, "listen() failed. errno: " + std::string(strerror(errno)));
         }
 
         if (socketConfig.enableTimestamp) {
             assertCondition(enableSocketTimestamp(socketFd), "setSOTimestamp() failed. errno: " + std::string(strerror(errno)));
         }
 
-        break; // Successfully created and configured socket
     }
-
-    freeaddrinfo(result);
-    assertCondition(socketFd != -1, "Failed to create socket");
 
     return socketFd;
 }
