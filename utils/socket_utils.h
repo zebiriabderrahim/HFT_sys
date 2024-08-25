@@ -163,7 +163,7 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
     std::string timeStr;
     const auto ip = socketConfig.ipAddress.empty() ? getIpAddressForInterface(socketConfig.interfaceName) : socketConfig.ipAddress;
 
-    LOG_INFO("Creating socket with configuration: " + socketConfig.toString());
+    LOG_INFOF("Creating socket with configuration: {} " , socketConfig.toString());
 
     const int inputFlags = (socketConfig.isListeningMode ? AI_PASSIVE : 0) | (AI_NUMERICHOST | AI_NUMERICSERV);
     const addrinfo hints{
