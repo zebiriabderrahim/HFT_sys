@@ -41,13 +41,6 @@ class TCPSocket {
      */
     TCPSocket() noexcept;
 
-    /**
-     * @brief Destroys the TCPSocket object.
-     *
-     * Closes the socket if it's open.
-     */
-    ~TCPSocket() noexcept;
-
     // Delete copy and move operations
     TCPSocket(const TCPSocket &) = delete;
     TCPSocket(TCPSocket &&) = delete;
@@ -60,8 +53,8 @@ class TCPSocket {
      * @return The file descriptor of the socket.
      */
     [[nodiscard]] auto getSocketFd() const noexcept -> int { return socketFd_; }
-    [[nodiscard]] auto getInboundData() const noexcept -> const std::vector<std::byte>& { return inboundData_; }
-    [[nodiscard]] auto getOutboundData() const noexcept -> const std::vector<std::byte>& { return outboundData_; }
+    [[nodiscard]] auto getInboundData() const noexcept -> const std::vector<char>& { return inboundData_; }
+    [[nodiscard]] auto getOutboundData() const noexcept -> const std::vector<char>& { return outboundData_; }
     [[nodiscard]] auto getNextSendValidIndex() const noexcept -> size_t { return nextSendValidIndex_; }
     [[nodiscard]] auto getNextRcvValidIndex() const noexcept -> size_t { return nextRcvValidIndex_; }
 
@@ -97,7 +90,7 @@ class TCPSocket {
      *
      * @param data Span of bytes to send.
      */
-    auto send(std::span<const std::byte> data) noexcept -> void;
+    auto send(const void *data, size_t len) noexcept -> void;
 
     /**
      * @brief Sets the callback function for receive events.
@@ -108,8 +101,8 @@ class TCPSocket {
 
   private:
     int socketFd_{-1};                                              ///< File descriptor for the socket.
-    std::vector<std::byte> outboundData_;                           ///< Buffer for outgoing data.
-    std::vector<std::byte> inboundData_;                            ///< Buffer for incoming data.
+    std::vector<char> outboundData_;                           ///< Buffer for outgoing data.
+    std::vector<char> inboundData_;                            ///< Buffer for incoming data.
     size_t nextSendValidIndex_{0};                                  ///< Next valid index for sending data.
     size_t nextRcvValidIndex_{0};                                   ///< Next valid index for receiving data.
     sockaddr_in socketAttrib_{};                                    ///< Socket attributes.

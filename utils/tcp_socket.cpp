@@ -11,16 +11,11 @@ TCPSocket::TCPSocket() noexcept {
     inboundData_.resize(TCPBufferSize);
 }
 
-TCPSocket::~TCPSocket() noexcept {
-    if (socketFd_ != -1) {
-        close(socketFd_);
-    }
-}
-
 auto TCPSocket::connect(std::string_view ip, std::string_view interfaceName, int port, bool isListening) -> int {
     const SocketConfig socketConfig{std::string(ip),
                                     std::string(interfaceName),
-                                    port, false,
+                                    port,
+                                    false,
                                     isListening,
                                     true};
 
@@ -66,15 +61,15 @@ auto TCPSocket::sendAndRecv() noexcept -> bool {
     if (nextSendValidIndex_ > 0) {
         const auto n = ::send(socketFd_, outboundData_.data(), nextSendValidIndex_, MSG_DONTWAIT | MSG_NOSIGNAL);
         LOG_INFOF("Sent {} bytes to socket {}", n, socketFd_);
-        nextSendValidIndex_ = 0;
     }
+    nextSendValidIndex_ = 0;
 
     return (read_size > 0);
 }
 
-auto TCPSocket::send(std::span<const std::byte> data) noexcept -> void {
-    std::memcpy(outboundData_.data() + nextSendValidIndex_, data.data(), data.size());
-    nextSendValidIndex_ += data.size();
+auto TCPSocket::send(const void *data, size_t len) noexcept -> void {
+    std::memcpy(outboundData_.data() + nextSendValidIndex_, data, len);
+    nextSendValidIndex_ += len;
 }
 
 } // namespace utils
