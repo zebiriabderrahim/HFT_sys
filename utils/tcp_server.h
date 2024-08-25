@@ -20,43 +20,49 @@
 
 namespace utils {
 
+using RecvCallback = std::function<void(TCPSocket *, Nanos)>;
+
 class TCPServer {
   public:
     TCPServer() = default;
-    ~TCPServer();
 
+    void stop() noexcept {
+        if (eventFd_ != -1) {
+            close(eventFd_);
+            eventFd_ = -1;
+        }
+
+        receiveSockets_.clear();
+        sendSockets_.clear();
+    }
     TCPServer(const TCPServer&) = delete;
     TCPServer& operator=(const TCPServer&) = delete;
     TCPServer(TCPServer&&) = delete;
     TCPServer& operator=(TCPServer&&) = delete;
 
-    [[nodiscard]] auto listen(std::string_view interfaceName, int port) -> bool;
+    auto listen(std::string_view interfaceName, int port) -> void;
     auto poll() noexcept -> void;
     auto sendAndReceive() noexcept -> void;
-    auto stop() noexcept -> void;
-
-    void setRecvCallback(std::function<void(TCPSocket*, Nanos)> callback) { recvCallback_ = std::move(callback);}
+    void setRecvCallback(RecvCallback callback) noexcept {recvCallback_ = std::move(callback);}
     void setRecvFinishedCallback(std::function<void()> callback) { recvFinishedCallback_ = std::move(callback);}
 
   private:
-    auto addSocketToEventSystem(TCPSocket* socket) const noexcept -> bool;
+    [[nodiscard]] auto addSocketToEventSystem(const std::shared_ptr<TCPSocket>& socket) const noexcept -> bool;
 
     static constexpr size_t MAX_EVENTS = 1024;
 
     int eventFd_{-1};
-    std::unique_ptr<TCPSocket> listenerSocket_;
 #ifdef __linux__
     epoll_event events_[MAX_EVENTS];
-    std::span<epoll_event> events_span_{events_, MAX_EVENTS};
 #else
-    struct kevent events_[MAX_EVENTS];
-    std::span<struct kevent> events_span_{events_, MAX_EVENTS};
+    struct kevent events_[MAX_EVENTS]{};
 #endif
 
-    std::vector<std::unique_ptr<TCPSocket>> receiveSockets_;
-    std::vector<std::unique_ptr<TCPSocket>> sendSockets_;
+    std::shared_ptr<TCPSocket> listenerSocket_;
+    std::vector<std::shared_ptr<TCPSocket>> receiveSockets_;
+    std::vector<std::shared_ptr<TCPSocket>> sendSockets_;
 
-    std::function<void(TCPSocket*, Nanos)> recvCallback_ = nullptr;
+    RecvCallback recvCallback_ = nullptr;
     std::function<void()> recvFinishedCallback_ = nullptr;
 };
 
