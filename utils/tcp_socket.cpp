@@ -17,8 +17,13 @@ TCPSocket::~TCPSocket() noexcept {
     }
 }
 
-auto TCPSocket::connect(std::string_view ip, std::string_view iface, int port, bool isListening) -> int {
-    const SocketConfig socketConfig{std::string(ip), std::string(iface), port, false, isListening, true};
+auto TCPSocket::connect(std::string_view ip, std::string_view interfaceName, int port, bool isListening) -> int {
+    const SocketConfig socketConfig{std::string(ip),
+                                    std::string(interfaceName),
+                                    port, false,
+                                    isListening,
+                                    true};
+
     socketFd_ = createSocket(socketConfig);
 
     socketAttrib_.sin_addr.s_addr = INADDR_ANY;
@@ -33,7 +38,13 @@ auto TCPSocket::sendAndRecv() noexcept -> bool {
     auto* cmsg = reinterpret_cast<struct cmsghdr*>(&ctrl);
 
     iovec iov{inboundData_.data() + nextRcvValidIndex_, TCPBufferSize - nextRcvValidIndex_};
-    msghdr msg{&socketAttrib_, sizeof(socketAttrib_), &iov, 1, ctrl, sizeof(ctrl), 0};
+    msghdr msg{&socketAttrib_,
+               sizeof(socketAttrib_),
+               &iov,
+               1,
+               ctrl,
+               sizeof(ctrl),
+               0};
 
     const auto read_size = recvmsg(socketFd_, &msg, MSG_DONTWAIT);
     if (read_size > 0) {
