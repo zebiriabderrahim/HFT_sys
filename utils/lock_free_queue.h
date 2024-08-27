@@ -67,7 +67,7 @@ class LFQueue {
     }
 
     auto updateReadIndex() noexcept -> void {
-        assertCondition(numElements_ > 0, "No elements to read.");
+        ASSERT_CONDITION(numElements_ > 0, "No elements to read.");
         nextIndexToRead_ = (nextIndexToRead_ + 1) % queue_.size();
         numElements_.fetch_sub(1, std::memory_order_relaxed);
     }
