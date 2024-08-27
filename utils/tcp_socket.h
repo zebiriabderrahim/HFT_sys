@@ -53,9 +53,33 @@ class TCPSocket {
      * @return The file descriptor of the socket.
      */
     [[nodiscard]] auto getSocketFd() const noexcept -> int { return socketFd_; }
-    [[nodiscard]] auto getInboundData() const noexcept -> const std::vector<char>& { return inboundData_; }
-    [[nodiscard]] auto getOutboundData() const noexcept -> const std::vector<char>& { return outboundData_; }
+
+    /**
+     * @brief Gets the inbound and outbound data buffers.
+     *
+     * @return The inbound and outbound data buffers.
+     */
+    [[nodiscard]] auto getInboundData() const noexcept -> const std::vector<char> & { return inboundData_; }
+
+    /**
+     * @brief Gets the outbound data buffer.
+     *
+     * @return The outbound data buffer.
+     */
+    [[nodiscard]] auto getOutboundData() const noexcept -> const std::vector<char> & { return outboundData_; }
+
+    /**
+     * @brief Gets the next valid index for sending data.
+     *
+     * @return The next valid index for sending data.
+     */
     [[nodiscard]] auto getNextSendValidIndex() const noexcept -> size_t { return nextSendValidIndex_; }
+
+    /**
+     * @brief Gets the next valid index for receiving data.
+     *
+     * @return The next valid index for receiving data.
+     */
     [[nodiscard]] auto getNextRcvValidIndex() const noexcept -> size_t { return nextRcvValidIndex_; }
 
     /**
@@ -64,8 +88,16 @@ class TCPSocket {
      * @param socketFd File descriptor of the socket.
      */
     auto setSocketFd(int socketFd) noexcept -> void { socketFd_ = socketFd; }
-    auto setNextSendValidIndex(size_t index) noexcept -> void { nextSendValidIndex_ = index; }
-    auto setNextRcvValidIndex(size_t index) noexcept -> void { nextRcvValidIndex_ = index; }
+
+    /**
+     * @brief Resets the inbound data buffer.
+     */
+    auto restNextSendValidIndex() noexcept -> void { nextSendValidIndex_ = 0; }
+
+    /**
+     * @brief Resets the next valid index for sending data.
+     */
+    auto restNextRcvValidIndex() noexcept -> void { nextRcvValidIndex_ = 0; }
 
     /**
      * @brief Connects the socket to a specified address.
@@ -76,14 +108,14 @@ class TCPSocket {
      * @param isListening If true, sets up the socket for listening instead of connecting.
      * @return The file descriptor of the connected socket.
      */
-    [[nodiscard]] auto connect(std::string_view ip, std::string_view iface, int port, bool isListening) -> int;
+    auto connect(std::string_view ip, std::string_view iface, int port, bool isListening) -> int;
 
     /**
      * @brief Performs non-blocking send and receive operations.
      *
      * @return true if data was received, false otherwise.
      */
-    [[nodiscard]] auto sendAndRecv() noexcept -> bool;
+    auto sendAndRecv() noexcept -> bool;
 
     /**
      * @brief Sends data through the socket.
@@ -101,8 +133,8 @@ class TCPSocket {
 
   private:
     int socketFd_{-1};                                              ///< File descriptor for the socket.
-    std::vector<char> outboundData_;                           ///< Buffer for outgoing data.
-    std::vector<char> inboundData_;                            ///< Buffer for incoming data.
+    std::vector<char> outboundData_;                                ///< Buffer for outgoing data.
+    std::vector<char> inboundData_;                                 ///< Buffer for incoming data.
     size_t nextSendValidIndex_{0};                                  ///< Next valid index for sending data.
     size_t nextRcvValidIndex_{0};                                   ///< Next valid index for receiving data.
     sockaddr_in socketAttrib_{};                                    ///< Socket attributes.

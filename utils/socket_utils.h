@@ -167,43 +167,45 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
 
     addrinfo *result = nullptr;
     const auto rc = getaddrinfo(ip.c_str(), std::to_string(socketConfig.portNumber).c_str(), &hints, &result);
-    assertCondition(!rc, "getaddrinfo() failed. error: " + std::string(gai_strerror(rc)) + " errno: " + strerror(errno));
+    ASSERT_CONDITION(!rc, "getaddrinfo() failed. error: {}  errno: {}", std::string(gai_strerror(rc)), std::string(strerror(errno)));
 
     int socketFd = -1;
     int one = 1;
     for (addrinfo *rp = result; rp != nullptr; rp = rp->ai_next) {
         socketFd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-        assertCondition(socketFd != -1, "socket() failed. errno: " + std::string(strerror(errno)));
+        ASSERT_CONDITION(socketFd != -1, "socket() failed. errno:{} ", std::string(strerror(errno)));
 
-        assertCondition(setSocketNonBlocking(socketFd), "setNonBlocking() failed. errno: " + std::string(strerror(errno)));
+        ASSERT_CONDITION(setSocketNonBlocking(socketFd), "setNonBlocking() failed. errno: {}", std::string(strerror(errno)));
 
         if (!socketConfig.useUdp) {
-            assertCondition(disableNagleAlgorithm(socketFd), "disableNagle() failed. errno: " + std::string(strerror(errno)));
+            ASSERT_CONDITION(disableNagleAlgorithm(socketFd), "disableNagle() failed. errno: {}", std::string(strerror(errno)));
         }
 
         if (!socketConfig.isListeningMode) {
-           assertCondition(connect(socketFd, rp->ai_addr, rp->ai_addrlen) == -1, "connect() failed. errno: " + std::string(strerror(errno)));
+            ASSERT_CONDITION(connect(socketFd, rp->ai_addr, rp->ai_addrlen) == -1, "connect() failed. errno: {}", std::string(strerror(errno)));
         }
 
         if (socketConfig.isListeningMode) {
-            assertCondition(setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&one), sizeof(one)) == 0,
-                            "setsockopt() SO_REUSEADDR failed. errno: " + std::string(strerror(errno)));
+            ASSERT_CONDITION(setsockopt(socketFd, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char *>(&one), sizeof(one)) == 0,
+                            "setsockopt() SO_REUSEADDR failed. errno: {} ", std::string(strerror(errno)));
         }
         if (socketConfig.isListeningMode) {
             sockaddr_in addr{ AF_INET ,{}, htonl(INADDR_ANY), {} };
             addr.sin_port = htons(socketConfig.portNumber);
-            assertCondition(bind(socketFd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) == 0,
-                            "bind() failed. errno: " + std::string(strerror(errno)));
+            ASSERT_CONDITION(bind(socketFd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) == 0,
+                            "bind() failed. errno: {} ", std::string(strerror(errno)));
         }
         if (!socketConfig.useUdp && socketConfig.isListeningMode) {
-            assertCondition(listen(socketFd, MaxTCPServerBacklog) == 0, "listen() failed. errno: " + std::string(strerror(errno)));
+            ASSERT_CONDITION(listen(socketFd, MaxTCPServerBacklog) == 0, "listen() failed. errno: {}", std::string(strerror(errno)));
         }
 
         if (socketConfig.enableTimestamp) {
-            assertCondition(enableSocketTimestamp(socketFd), "setSOTimestamp() failed. errno: " + std::string(strerror(errno)));
+            ASSERT_CONDITION(enableSocketTimestamp(socketFd), "setSOTimestamp() failed. errno: {} ", std::string(strerror(errno)));
         }
 
     }
+
+    freeaddrinfo(result);
 
     return socketFd;
 }
