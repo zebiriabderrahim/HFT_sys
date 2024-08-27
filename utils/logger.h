@@ -69,7 +69,7 @@ class Logger {
 #define LOG_ERROR(msg)   utils::Logger::getInstance().log(utils::LogLevel::ERROR, msg)
 
 #define LOG_DEBUGF(...)   utils::Logger::getInstance().logWithFormat(utils::LogLevel::DEBUG, [&]{ return std::format(__VA_ARGS__); })
-#define LOG_INFOF(...)    utils::Logger::getInstance().logWithFormat(utils::LogLevel::INFO, [&]{ return std::format(__VA_ARGS__); })
+#define LOG_INFOF(...)    utils::Logger::getInstance().logWithFormat(utils::LogLevel::INFO, [=]{ return std::format(__VA_ARGS__); })
 #define LOG_WARNINGF(...) utils::Logger::getInstance().logWithFormat(utils::LogLevel::WARNING, [&]{ return std::format(__VA_ARGS__); })
 #define LOG_ERRORF(...)   utils::Logger::getInstance().logWithFormat(utils::LogLevel::ERROR, [&]{ return std::format(__VA_ARGS__); })
 

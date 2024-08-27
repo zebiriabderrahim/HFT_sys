@@ -6,9 +6,9 @@ namespace utils {
 
 Logger::Logger(std::string_view logFilePath): logQueue_(LOG_QUEUE_SIZE) {
     logFile_.open(logFilePath.data(), std::ios::out | std::ios::app);
-    assertCondition(logFile_.is_open(), "Failed to open log file.");
+    ASSERT_CONDITION(logFile_.is_open(), "Failed to open log file: {}", logFilePath);
     logThread_ = createAndStartThread(-1, "logger {}", [this]{flushQueue();});
-    assertCondition(logThread_ != nullptr, "Failed to create log thread.");
+    ASSERT_CONDITION(logThread_ != nullptr, "Failed to create logger thread");
 }
 
 Logger::~Logger() {
