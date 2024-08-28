@@ -68,12 +68,12 @@ auto TCPServer::poll() noexcept -> void {
         if (event.filter == EVFILT_READ) {
 #endif
             if (socket == listenerSocket_) {
-                LOG_INFOF("Received EPOLLIN on listener socket:{}", fd);
+                LOG_INFO("Received EPOLLIN on listener socket:{}", fd);
                 haveNewConnection = true;
                 continue;
             }
 
-            LOG_INFOF("Received EPOLLIN on socket:{}", fd);
+            LOG_INFO("Received EPOLLIN on socket:{}", fd);
             auto it = std::ranges::find_if(receiveSockets_.begin(), receiveSockets_.end(), [socket](const auto &s) { return s == socket; });
             if (it == receiveSockets_.end()) {
                 receiveSockets_.push_back(socket);
@@ -85,7 +85,7 @@ auto TCPServer::poll() noexcept -> void {
 #else
         if (event.filter == EVFILT_WRITE) {
 #endif
-            LOG_INFOF("Received EPOLLOUT on socket:{}", fd);
+            LOG_INFO("Received EPOLLOUT on socket:{}", fd);
             std::input_iterator auto it =
                 std::ranges::find_if(sendSockets_.begin(), sendSockets_.end(), [socket](const auto &s) { return s == socket; });
             if (it == sendSockets_.end()) {
@@ -98,7 +98,7 @@ auto TCPServer::poll() noexcept -> void {
 #else
         if (event.flags & (EV_EOF | EV_ERROR)) {
 #endif
-            LOG_INFOF("Received EPOLLERR or EPOLLHUP on socket:{}", fd);
+            LOG_INFO("Received EPOLLERR or EPOLLHUP on socket:{}", fd);
             std::input_iterator auto it =
                 std::ranges::find_if(receiveSockets_.begin(), receiveSockets_.end(), [socket](const auto &s) { return s == socket; });
             if (it == receiveSockets_.end()) {
@@ -109,7 +109,7 @@ auto TCPServer::poll() noexcept -> void {
 
     // Accept a new connection, create a TCPSocket and add it to our containers.
     while (haveNewConnection) {
-        LOG_INFOF("Accepting new connection on listener socket:{}", listenerSocket_->getSocketFd());
+        LOG_INFO("Accepting new connection on listener socket:{}", listenerSocket_->getSocketFd());
         sockaddr_storage addr{};
         socklen_t addr_len = sizeof(addr);
         int fd = accept(listenerSocket_->getSocketFd(), reinterpret_cast<sockaddr *>(&addr), &addr_len);
@@ -119,7 +119,7 @@ auto TCPServer::poll() noexcept -> void {
         ASSERT_CONDITION(setSocketNonBlocking(fd) && disableNagleAlgorithm(fd), "Failed to set non-blocking or no-delay on socket: {}",
                          std::to_string(fd));
 
-        LOG_INFOF("Accepted new connection on listener socket:{}. New socket:{}", listenerSocket_->getSocketFd(), fd);
+        LOG_INFO("Accepted new connection on listener socket:{}. New socket:{}", listenerSocket_->getSocketFd(), fd);
 
         auto socket = socketPool_.allocate();
         socket->setSocketFd(fd);

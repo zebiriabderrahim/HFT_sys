@@ -46,13 +46,12 @@ auto TCPSocket::sendAndRecv() noexcept -> bool {
         nextRcvValidIndex_ += read_size;
 
         Nanos kernel_time = 0;
-        if (timeval time_kernel{};
-            (cmsg->cmsg_level == SOL_SOCKET) && (cmsg->cmsg_type == SCM_TIMESTAMP) && (cmsg->cmsg_len == CMSG_LEN(sizeof(time_kernel)))) {
+        if (timeval time_kernel{}; cmsg->cmsg_level == SOL_SOCKET && cmsg->cmsg_type == SCM_TIMESTAMP && cmsg->cmsg_len == CMSG_LEN(sizeof(time_kernel))) {
             std::memcpy(&time_kernel, CMSG_DATA(cmsg), sizeof(time_kernel));
-            kernel_time = time_kernel.tv_sec * NANOS_TO_SECS + time_kernel.tv_usec * NANOS_TO_MICROS;
+            kernel_time = time_kernel.tv_sec * NANOS_TO_SECS + time_kernel.tv_usec * NANOS_TO_MICROS; // convert timestamp to nanoseconds.
         }
 
-        LOG_INFOF("Received {} bytes from socket {}. Kernel time: {}", read_size, socketFd_, kernel_time);
+        LOG_INFO("Received {} bytes from socket {}. xxKernel time: {}", read_size, socketFd_, kernel_time);
         if (recvCallback_) {
             recvCallback_(this, kernel_time);
         }
@@ -60,7 +59,7 @@ auto TCPSocket::sendAndRecv() noexcept -> bool {
 
     if (nextSendValidIndex_ > 0) {
         const auto n = ::send(socketFd_, outboundData_.data(), nextSendValidIndex_, MSG_DONTWAIT | MSG_NOSIGNAL);
-        LOG_INFOF("Sent {} bytes to socket {}", n, socketFd_);
+        LOG_INFO("Sent {} bytes to socket {}", n, socketFd_);
     }
     nextSendValidIndex_ = 0;
 
