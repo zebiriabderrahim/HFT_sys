@@ -12,8 +12,12 @@
 #include <format>
 #include <functional>
 
-//#ifdef DEBUG
-
+/**
+ * @brief Assertion function that checks a condition and prints an error message if the condition is false.
+ * @param condition The condition to check.
+ * @param messageFunc A function that returns the error message formatted to print if the condition is false.
+ * @param loc The source location where the assertion failed.
+ */
 template <typename Func>
 inline void assertCondition(bool condition, Func&& messageFunc, std::source_location loc = std::source_location::current()) noexcept {
     if (!condition) [[unlikely]] {
@@ -24,13 +28,12 @@ inline void assertCondition(bool condition, Func&& messageFunc, std::source_loca
         std::terminate();
     }
 }
+/**
+ * @brief Assertion function that checks a condition and prints an error message if the condition is false.
+ * @param condition The condition to check.
+ * @param messageFunc A function that returns the error message formatted to print if the condition is false.
+ * @param loc The source location where the assertion failed.
+ */
 #define ASSERT_CONDITION(cond, ...) assertCondition(cond, [&] { return std::format(__VA_ARGS__); })
 
-
- //TODO: Add a macro to disable assertions in release builds
-//#else
-//inline void assert_condition(bool, std::string_view, std::source_location = std::source_location::current()) noexcept {
-//    // No-op in release builds
-//}
-//#endif
 #endif // LOW_LATENCY_TRADING_APP_DEBUG_ASSERTION_H

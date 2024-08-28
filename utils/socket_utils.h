@@ -11,7 +11,6 @@
 #include <iostream>
 #include <netdb.h>
 #include <netinet/tcp.h>
-#include <optional>
 #include <source_location>
 #include <string>
 #include <sys/socket.h>
@@ -99,34 +98,6 @@ struct SocketConfig {
 [[nodiscard]] inline auto enableSocketTimestamp(int socketFd) -> bool {
     int flag = 1;
     return (setsockopt(socketFd, SOL_SOCKET, SO_TIMESTAMP, &flag, sizeof(int)) != -1);
-}
-
-/**
- * @brief Check if the last operation would block.
- * @return True if it would block, false otherwise.
- */
-[[nodiscard]] inline auto isOperationWouldBlock() -> bool {
-    return errno == EWOULDBLOCK || errno == EAGAIN;
-}
-
-/**
- * @brief Set the multicast Time-To-Live (TTL) for a socket.
- * @param socketFd The file descriptor of the socket.
- * @param ttlValue The TTL value.
- * @return True if successful, false otherwise.
- */
-[[nodiscard]] inline auto setMulticastTTL(int socketFd, int ttlValue) -> bool {
-    return (setsockopt(socketFd, IPPROTO_IP, IP_MULTICAST_TTL, &ttlValue, sizeof(int)) != -1);
-}
-
-/**
- * @brief Set the Time-To-Live (TTL) for a socket.
- * @param socketFd The file descriptor of the socket.
- * @param ttlValue The TTL value.
- * @return True if successful, false otherwise.
- */
-[[nodiscard]] inline auto setSocketTTL(int socketFd, int ttlValue) -> bool {
-    return (setsockopt(socketFd, IPPROTO_IP, IP_TTL, &ttlValue, sizeof(int)) != -1);
 }
 
 /**
