@@ -8,7 +8,6 @@ namespace utils {
 
 TCPServer::~TCPServer() noexcept {
     stop();
-    socketPool_.deallocate(listenerSocket_);
 }
 
 auto TCPServer::stop() noexcept -> void {
@@ -35,10 +34,9 @@ auto TCPServer::listen(std::string_view interfaceName, int port) -> void {
 #else
     eventFd_ = kqueue();
 #endif
-    listenerSocket_ = socketPool_.allocate();
-    ASSERT_CONDITION(listenerSocket_->connect("", interfaceName, port, true) >= 0, "Listener socket failed to connect. iface: {}  port: {} error: {}",
+    ASSERT_CONDITION(listenerSocket_.connect("", interfaceName, port, true) >= 0, "Listener socket failed to connect. iface: {}  port: {} error: {}",
                      std::string(interfaceName), std::to_string(port), std::string(strerror(errno)));
-    ASSERT_CONDITION(addSocketToEventSystem(listenerSocket_), "Unable to add listener socket to event system. error: {}",
+    ASSERT_CONDITION(addSocketToEventSystem(&listenerSocket_), "Unable to add listener socket to event system. error: {}",
                      std::string(strerror(errno)));
 }
 
@@ -67,7 +65,7 @@ auto TCPServer::poll() noexcept -> void {
         int fd = socket->getSocketFd();
         if (event.filter == EVFILT_READ) {
 #endif
-            if (socket == listenerSocket_) {
+            if (socket == &listenerSocket_) {
                 LOG_INFO("Received EPOLLIN on listener socket:{}", fd);
                 haveNewConnection = true;
                 continue;
@@ -109,17 +107,16 @@ auto TCPServer::poll() noexcept -> void {
 
     // Accept a new connection, create a TCPSocket and add it to our containers.
     while (haveNewConnection) {
-        LOG_INFO("Accepting new connection on listener socket:{}", listenerSocket_->getSocketFd());
+        LOG_INFO("Accepting new connection on listener socket:{}", listenerSocket_.getSocketFd());
         sockaddr_storage addr{};
         socklen_t addr_len = sizeof(addr);
-        int fd = accept(listenerSocket_->getSocketFd(), reinterpret_cast<sockaddr *>(&addr), &addr_len);
+        int fd = accept(listenerSocket_.getSocketFd(), reinterpret_cast<sockaddr *>(&addr), &addr_len);
         if (fd == -1)
             break;
 
-        ASSERT_CONDITION(setSocketNonBlocking(fd) && disableNagleAlgorithm(fd), "Failed to set non-blocking or no-delay on socket: {}",
-                         std::to_string(fd));
+        ASSERT_CONDITION(setSocketNonBlocking(fd) && disableNagleAlgorithm(fd), "Failed to set non-blocking or no-delay on socket: {}",fd);
 
-        LOG_INFO("Accepted new connection on listener socket:{}. New socket:{}", listenerSocket_->getSocketFd(), fd);
+        LOG_INFO("Accepted new connection on listener socket:{}. New socket:{}", listenerSocket_.getSocketFd(), fd);
 
         auto socket = socketPool_.allocate();
         socket->setSocketFd(fd);
@@ -132,24 +129,18 @@ auto TCPServer::poll() noexcept -> void {
 }
 
 void TCPServer::sendAndReceive() noexcept {
-    bool receivedData = false;
+    auto recv = false;
 
-    for (const auto &socket : receiveSockets_) {
-        if (socket->sendAndRecv()) {
-            receivedData = true;
-            if (recvCallback_) {
-                recvCallback_(socket, getCurrentNanos());
-            }
-        }
-    }
+    std::ranges::for_each(receiveSockets_.begin(), receiveSockets_.end(), [&recv](auto socket) {
+        recv |= socket->sendAndRecv();
+    });
 
-    if (receivedData && recvFinishedCallback_) {
+    if (recv) // There were some events and they have all been dispatched, inform listener.
         recvFinishedCallback_();
-    }
 
-    for (const auto &socket : sendSockets_) {
+    std::ranges::for_each(sendSockets_.begin(), sendSockets_.end(), [](auto socket) {
         socket->sendAndRecv();
-    }
+    });
 }
 
 auto TCPServer::addSocketToEventSystem(TCPSocket *socket) const noexcept -> bool {

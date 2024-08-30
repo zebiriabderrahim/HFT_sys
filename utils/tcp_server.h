@@ -105,7 +105,7 @@ class TCPServer {
     struct kevent events_[MAX_EVENTS]{};
 #endif
 
-    TCPSocket* listenerSocket_;
+    TCPSocket listenerSocket_;
     std::vector<TCPSocket *> receiveSockets_;
     std::vector<TCPSocket *> sendSockets_;
     MemoryPool<TCPSocket> socketPool_{MAX_EVENTS};
