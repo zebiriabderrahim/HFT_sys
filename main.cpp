@@ -2,104 +2,96 @@
 // Created by ABDERRAHIM ZEBIRI on 2024-08-06.
 //
 
-#include "./utils/memory_pool.h"
 #include "./utils/thread_util.h"
 #include "utils/lock_free_queue.h"
 #include "utils/logger.h"
+#include "utils/tcp_server.h"
+#include "utils/tcp_socket.h"
+//#include <benchmark/benchmark.h>
 
-struct MyStruct {
-    int d_[3];
-};
+//static void BM_LOGGING(benchmark::State& state) {
+//    for (auto _ : state) {
+//        LOG_INFO("This is an info message" + std::to_string(56));
+//    }
+//}
+//BENCHMARK(BM_LOGGING);
+//
+//static void BM_LOGGINGF(benchmark::State& state) {
+//    for (auto _ : state) {
+//        LOG_INFO("This is an {} info message with a formatted value: {}", 56, "formatted");
+//
+//    }
+//}
+//BENCHMARK(BM_LOGGINGF);
+//
+//BENCHMARK_MAIN();
 
-using namespace utils;
+int main(int, char **) {
+    using namespace utils;
 
-auto consumeFunction(LFQueue<MyStruct>* lfq) {
-    using namespace std::literals::chrono_literals;
-    std::this_thread::sleep_for(5s);
+    auto tcpServerRecvCallback = [](TCPSocket* socket, Nanos rx_time) noexcept {
+        if (!socket) {
+            LOG_ERROR("Received null socket in callback");
+            return;
+        }
+        int socketFd = socket->getSocketFd();
+        size_t i = socket->getNextRcvValidIndex();
+        LOG_INFO("TCPServer::defaultRecvCallback() socket:{} len:{} msg:{}", socketFd, i, rx_time);
 
-    while(lfq->size()) {
-        auto d = lfq->pop();
+        const std::string reply = "TCPServer received msg:" +
+                                  std::string(reinterpret_cast<const char*>(socket->getInboundData().data()), i);
+        socket->restNextRcvValidIndex();
+        socket->send(reinterpret_cast<const std::byte*>(reply.data()), reply.size());
+    };
 
-        std::cout << "consumeFunction read elem:" << d->d_[0] << "," << d->d_[1] << "," << d->d_[2] << " lfq-size:" << lfq->size() << std::endl;
+    auto tcpServerRecvFinishedCallback = []() noexcept { LOG_INFO("TCPServer::defaultRecvFinishedCallback()");
+    };
 
-        std::this_thread::sleep_for(1s);
+    auto tcpClientRecvCallback = [](TCPSocket *socket, Nanos rx_time) noexcept {
+        const size_t i = socket->getNextRcvValidIndex();
+        const std::string recv_msg(reinterpret_cast<const char *>(socket->getInboundData().data()), i);
+        socket->restNextRcvValidIndex();
+
+        const int fd = socket->getSocketFd();
+        LOG_INFO("TCPClient::defaultRecvCallback() socket:{} len:{} msg:{}", fd, i, recv_msg);
+    };
+
+    const std::string iface = "lo0";
+    const std::string ip = "127.0.0.1";
+    const int port = 12345;
+
+    LOG_INFO("Starting TCP server on iface:{} port:{}", iface, port);
+
+    TCPServer server;
+    server.setRecvCallback(tcpServerRecvCallback);
+    server.setRecvFinishedCallback(tcpServerRecvFinishedCallback);
+    server.listen(iface, port);
+
+    std::vector<std::unique_ptr<TCPSocket>> clients(2);
+
+    for (size_t i = 0; i < clients.size(); ++i) {
+        clients[i] = std::make_unique<TCPSocket>();
+        clients[i]->setRecvCallback(tcpClientRecvCallback);
+
+        LOG_INFO("Connecting TCPClient[{}] on iface:{} port:{}", i, iface, port);
+        clients[i]->connect(ip, iface, port, false);
+        server.poll();
     }
 
-    std::cout << "consumeFunction exiting." << std::endl;
-}
+    using namespace std::literals::chrono_literals;
 
-//int main(int, char **) {
-//    LFQueue<MyStruct> lfq(20);
+    for (auto itr = 0; itr < 1; ++itr) {
+        for (size_t i = 0; i < clients.size(); ++i) {
+            const std::string client_msg = std::format("Client[{}] message iteration:{}", i, itr);
+            LOG_INFO("Sending message:{}", client_msg);
 
-//    auto ct = createAndStartThread(-1, "", consumeFunction, &lfq);
-//
-//    for(auto i = 0; i < 50; ++i) {
-//        const MyStruct d{i, i * 10, i * 100};
-//        lfq.push(d);
-//
-//        std::cout << "main constructed elem:" << d.d_[0] << "," << d.d_[1] << "," << d.d_[2] << " lfq-size:" << lfq.size() << std::endl;
-//
-//        using namespace std::literals::chrono_literals;
-//        std::this_thread::sleep_for(1s);
-//    }
-//
-//    std::cout << "main exiting." << std::endl;
+            clients[i]->send(client_msg.data(), client_msg.length());
+            clients[i]->sendAndRecv();
 
-//    return 0;
-//}
-
-//
-//int main(int, char **) {
-//    using namespace utils;
-//
-//    MemoryPool<float> prim_pool(50);
-//    MemoryPool<MyStruct> struct_pool(50);
-//
-//    for(auto i = 0; i < 50; ++i) {
-//        auto p_ret = prim_pool.allocate(2);
-//        auto s_ret = struct_pool.allocate(MyStruct{i, i+1, i+2});
-//
-//        std::cout << "prim elem:" << *p_ret << " allocated at:" << p_ret << std::endl;
-//        std::cout << "struct elem:" << s_ret->d_[0] << "," << s_ret->d_[1] << "," << s_ret->d_[2] << " allocated at:" << s_ret << std::endl;
-//
-//        if(i % 5 == 0) {
-//            std::cout << "deallocating prim elem:" << *p_ret << " from:" << p_ret << std::endl;
-//            std::cout << "deallocating struct elem:" << s_ret->d_[0] << "," << s_ret->d_[1] << "," << s_ret->d_[2] << " from:" << s_ret << std::endl;
-//
-//            prim_pool.deallocate(p_ret);
-//            struct_pool.deallocate(s_ret);
-//        }
-//    }
-//
-//    return 0;
-//}
-
-int main() {
-    try {
-        using enum utils::LogLevel;
-        // Create a logger
-
-        // Log different types of messages
-        LOG_DEBUG("Simple debug message");
-        LOG_INFOF("Formatted info: value = {}", 42);
-        // Log some more messages
-        for (int i = 0; i < 10; ++i) {
-            LOG_INFOF("Iteration {}", i);
+            std::this_thread::sleep_for(500ms);
+            server.poll();
+            server.sendAndReceive();
         }
-        std::string result = std::format("The answer is: {}", 42);
-
-        LOG_INFO(result);
-
-        std::cout << "Logging complete. Waiting for logger to finish..." << std::endl;
-
-        // Wait a bit to allow the logger to process all messages
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-
-        std::cout << "Logger test complete. Check test_log.txt for output." << std::endl;
-
-    } catch (const std::exception& e) {
-        std::cerr << "An error occurred: " << e.what() << std::endl;
-        return 1;
     }
 
     return 0;
