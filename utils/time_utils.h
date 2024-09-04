@@ -36,6 +36,16 @@ inline auto getCurrentTimeStr() -> std::string {
     return oss.str();
 }
 
+inline auto convertNanosToTimeStr(Nanos nanos) -> std::string {
+    auto time = std::chrono::system_clock::time_point(std::chrono::nanoseconds(nanos));
+    auto time_t = std::chrono::system_clock::to_time_t(time);
+    std::tm tm{};
+    localtime_r(&time_t, &tm); // Thread-safe version of localtime
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
+    return oss.str();
+}
+
 } // namespace utils
 
 #endif // LOW_LATENCY_TRADING_APP_TIME_UTILS_H

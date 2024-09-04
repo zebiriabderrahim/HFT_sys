@@ -58,11 +58,11 @@ auto TCPServer::poll() noexcept -> void {
         const auto &event = events_[i];
         auto socket = reinterpret_cast<TCPSocket *>(event.udata);
 #endif
+        int fd = socket->getSocketFd();
 
 #ifdef __linux__
         if (event.events & EPOLLIN) {
 #else
-        int fd = socket->getSocketFd();
         if (event.filter == EVFILT_READ) {
 #endif
             if (socket == &listenerSocket_) {
@@ -72,7 +72,7 @@ auto TCPServer::poll() noexcept -> void {
             }
 
             LOG_INFO("Received EPOLLIN on socket:{}", fd);
-            auto it = std::ranges::find_if(receiveSockets_.begin(), receiveSockets_.end(), [socket](const auto &s) { return s == socket; });
+            std::input_iterator auto it = std::ranges::find_if(receiveSockets_.begin(), receiveSockets_.end(), [socket](const auto &s) { return s == socket; });
             if (it == receiveSockets_.end()) {
                 receiveSockets_.push_back(socket);
             }
