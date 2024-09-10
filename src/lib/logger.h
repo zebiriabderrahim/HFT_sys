@@ -135,7 +135,7 @@ class Logger {
     std::vector<std::any> argVector_;          ///< Temporary vector for storing arguments during logging.
 };
 
-} // namespace utils
+} // namespace lib
 
 /**
  * @def LOG_INFO(msg, ...)

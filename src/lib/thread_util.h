@@ -69,5 +69,5 @@ template <typename F, typename... Args>
     };
     return std::make_unique<std::jthread>(f);
 }
-} // namespace utils
+} // namespace lib
 #endif // LOW_LATENCY_TRADING_APP_THREAD_UTIL_H

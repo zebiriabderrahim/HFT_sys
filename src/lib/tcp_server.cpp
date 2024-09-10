@@ -156,4 +156,4 @@ auto TCPServer::addSocketToEventSystem(TCPSocket *socket) const noexcept -> bool
 #endif
 }
 
-} // namespace utils
+} // namespace lib

@@ -46,6 +46,6 @@ inline auto convertNanosToTimeStr(Nanos nanos) -> std::string {
     return oss.str();
 }
 
-} // namespace utils
+} // namespace lib
 
 #endif // LOW_LATENCY_TRADING_APP_TIME_UTILS_H

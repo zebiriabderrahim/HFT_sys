@@ -141,6 +141,6 @@ class TCPSocket {
     std::function<void(TCPSocket *, Nanos)> recvCallback_{nullptr}; ///< Callback for receive events.
 };
 
-} // namespace utils
+} // namespace lib
 
 #endif // LOW_LATENCY_TRADING_APP_TCP_SOCKET_H

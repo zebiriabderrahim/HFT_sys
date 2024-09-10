@@ -78,6 +78,6 @@ class LFQueue {
     std::vector<T> queue_;
 };
 
-} // namespace utils
+} // namespace lib
 
 #endif // LOW_LATENCY_TRADING_APP_LOCK_FREE_QUEUE_H

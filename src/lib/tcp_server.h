@@ -114,6 +114,6 @@ class TCPServer {
     std::function<void()> recvFinishedCallback_ = nullptr;
 };
 
-} // namespace utils
+} // namespace lib
 
 #endif // LOW_LATENCY_TRADING_APP_TCP_SERVER_H

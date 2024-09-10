@@ -125,4 +125,4 @@ Logger &Logger::getInstance(std::string_view logFilePath) {
         return instance;
 }
 
-} // namespace utils
+} // namespace lib

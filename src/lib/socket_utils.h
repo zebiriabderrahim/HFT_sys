@@ -181,6 +181,6 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
     return socketFd;
 }
 
-} // namespace utils
+} // namespace lib
 
 #endif // LOW_LATENCY_TRADING_APP_SOCKET_UTILS_H

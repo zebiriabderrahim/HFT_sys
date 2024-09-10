@@ -71,4 +71,4 @@ auto TCPSocket::send(const void *data, size_t len) noexcept -> void {
     nextSendValidIndex_ += len;
 }
 
-} // namespace utils
+} // namespace lib

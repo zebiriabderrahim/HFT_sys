@@ -108,6 +108,6 @@ class MemoryPool {
     std::size_t nextFreeIndex_{0}; ///< Index of the next free memory block.
 };
 
-} // namespace utils
+} // namespace lib
 
 #endif // LOW_LATENCY_TRADING_APP_MEMORY_POOL_H
