@@ -47,8 +47,8 @@ struct OMEMarketUpdate {
     };
 
     Type type{Type::INVALID};             // Message type
-    OrderID order_id{OrderID_INVALID};    // Order ID in the book
-    TickerID ticker_id{TickerID_INVALID}; // Ticker of the product
+    OrderID orderId{OrderID_INVALID};    // Order ID in the book
+    TickerID tickerId{TickerID_INVALID}; // Ticker of the product
     Side side{Side::INVALID};             // Buy or sell
     Price price{Price_INVALID};           // Price of the order
     Qty qty{Qty_INVALID};                 // Quantity
@@ -81,7 +81,7 @@ struct OMEMarketUpdate {
     [[nodiscard]] std::string toStr() const {
         return std::format("<OMEMarketUpdate> [type: {}, ticker: {}, oid: {}, side: {}, qty: {}, price: {}, priority: {}]",
                            typeToStr(type),
-                           tickerIdToStr(ticker_id), orderIdToStr(order_id), sideToStr(side), qtyToStr(qty), priceToStr(price),
+                           tickerIdToStr(tickerId), orderIdToStr(orderId), sideToStr(side), qtyToStr(qty), priceToStr(price),
                            priorityToStr(priority));
     }
 };
@@ -89,20 +89,20 @@ struct OMEMarketUpdate {
 /**
  * @brief Market update format sent by the Market Data Publisher
  * for public exchange clients to consume.
- * @details Data is disseminated over UDP, so the n_seq member
+ * @details Data is disseminated over UDP, so the nSeq member
  * keeps track of data sequence order to allow clients to
  * reconstruct the correct market data order on their end.
  */
 struct MDPMarketUpdate {
-    std::size_t n_seq{0};        // Sequence number for ordering
-    OMEMarketUpdate ome_update;  // The actual market update
+    std::size_t nSeq{0};        // Sequence number for ordering
+    OMEMarketUpdate omeUpdate;  // The actual market update
 
     /**
      * @brief Converts the MDP market update to a string representation.
      * @return A string representing the MDP market update.
      */
     [[nodiscard]] std::string toStr() const {
-        return std::format("<MDPMarketUpdate> [n_seq: {}, {}]", n_seq, ome_update.toStr());
+        return std::format("<MDPMarketUpdate> [nSeq: {}, {}]", nSeq, omeUpdate.toStr());
     }
 };
 

@@ -43,9 +43,9 @@ struct OMEClientRequest {
     };
 
     Type type{Type::INVALID};               ///< Type of the request
-    ClientID client_id{ClientID_INVALID};   ///< ID of the client making the request
-    TickerID ticker_id{TickerID_INVALID};   ///< ID of the product being traded
-    OrderID order_id{OrderID_INVALID};      ///< ID of the order (new or existing)
+    ClientID clientId{ClientID_INVALID};   ///< ID of the client making the request
+    TickerID tickerId{TickerID_INVALID};   ///< ID of the product being traded
+    OrderID orderId{OrderID_INVALID};      ///< ID of the order (new or existing)
     Side side{Side::INVALID};               ///< Buy or sell side of the order
     Price price{Price_INVALID};             ///< Price of the order
     Qty qty{Qty_INVALID};                   ///< Quantity of the order
@@ -75,9 +75,9 @@ struct OMEClientRequest {
      * @return A string representing all fields of the request
      */
     [[nodiscard]] auto toStr() const -> std::string {
-        return std::format("<OMEClientRequest> [type: {}, client_id: {}, ticker_id: {}, order_id: {}, side: {}, price: {}, qty: {}]",
-                           typeToStr(type), clientIdToStr(client_id), tickerIdToStr(ticker_id),
-                           orderIdToStr(order_id), sideToStr(side), priceToStr(price), qtyToStr(qty));
+        return std::format("<OMEClientRequest> [type: {}, clientId: {}, tickerId: {}, orderId: {}, side: {}, price: {}, qty: {}]",
+                           typeToStr(type), clientIdToStr(clientId), tickerIdToStr(tickerId),
+                           orderIdToStr(orderId), sideToStr(side), priceToStr(price), qtyToStr(qty));
     }
 };
 
@@ -86,15 +86,15 @@ struct OMEClientRequest {
  * @details This structure wraps an OMEClientRequest with an additional sequence number
  */
 struct OGSClientRequest {
-    std::size_t n_seq{0};        ///< Sequence number for ordering requests
-    OMEClientRequest ome_request; ///< The actual order request
+    std::size_t nSeq{0};        ///< Sequence number for ordering requests
+    OMEClientRequest omeRequest; ///< The actual order request
 
     /**
      * @brief Converts the entire request to a string representation
      * @return A string representing all fields of the request
      */
     [[nodiscard]] auto toStr() const -> std::string {
-        return std::format("<OGSClientRequest> [n_seq: {}, ome_request: {}]", n_seq, ome_request.toStr());
+        return std::format("<OGSClientRequest> [nSeq: {}, omeRequest: {}]", nSeq, omeRequest.toStr());
     }
 };
 
