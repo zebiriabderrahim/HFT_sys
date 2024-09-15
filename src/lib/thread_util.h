@@ -10,10 +10,10 @@
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <string>
 #include <sys/syscall.h>
 #include <thread>
 #include <unistd.h>
+#include <thread>
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>

@@ -6,11 +6,8 @@
 #define LOW_LATENCY_TRADING_APP_DEBUG_ASSERTION_H
 
 #include <iostream>
-#include <string_view>
 #include <source_location>
-#include <cstdlib>
 #include <format>
-#include <functional>
 
 /**
  * @brief Assertion function that checks a condition and prints an error message if the condition is false.

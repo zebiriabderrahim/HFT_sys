@@ -6,12 +6,9 @@
 #include <string_view>
 #include <thread>
 #include <memory>
-#include <functional>
 #include <any>
 
 #include "lock_free_queue.h"
-#include "thread_util.h"
-#include "time_utils.h"
 
 /**
  * @file logger.h

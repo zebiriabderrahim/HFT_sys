@@ -3,8 +3,8 @@
 #ifndef LOW_LATENCY_TRADING_APP_SOCKET_UTILS_H
 #define LOW_LATENCY_TRADING_APP_SOCKET_UTILS_H
 
-
 #include <arpa/inet.h>
+#include <cstring>
 #include <fcntl.h>
 #include <format>
 #include <ifaddrs.h>

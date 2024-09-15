@@ -66,7 +66,7 @@ auto TCPSocket::sendAndRecv() noexcept -> bool {
     return (read_size > 0);
 }
 
-auto TCPSocket::send(const void *data, size_t len) noexcept -> void {
+auto TCPSocket::send(const void *data, std::size_t len) noexcept -> void {
     std::memcpy(outboundData_.data() + nextSendValidIndex_, data, len);
     nextSendValidIndex_ += len;
 }

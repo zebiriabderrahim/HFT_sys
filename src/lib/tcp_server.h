@@ -5,8 +5,7 @@
 #define LOW_LATENCY_TRADING_APP_TCP_SERVER_H
 
 #include <functional>
-#include <memory>
-#include <span>
+
 #include <string_view>
 #include <vector>
 

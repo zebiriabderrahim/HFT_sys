@@ -1,8 +1,11 @@
 #include "logger.h"
 #include "time_utils.h"
+#include "thread_util.h"
+
 #include <format>
 #include <typeindex>
 #include <unordered_map>
+
 
 
 namespace utils {
@@ -83,13 +86,11 @@ std::string Logger::formatMessage(std::string_view format_string, const std::vec
     std::string result(format_string);
     size_t arg_index = 0;
     for (size_t i = 0; i < result.size(); ++i) {
-        if (result[i] == '{' && i + 1 < result.size() && result[i + 1] == '}') {
-            if (arg_index < args.size()) {
-                std::string arg_str = anyToString(args[arg_index]);
-                result.replace(i, 2, arg_str);
-                i += arg_str.length() - 1;
-                ++arg_index;
-            }
+        if (result[i] == '{' && i + 1 < result.size() && result[i + 1] == '}' && arg_index < args.size()) {
+            std::string arg_str = anyToString(args[arg_index]);
+            result.replace(i, 2, arg_str);
+            i += arg_str.length() - 1;
+            ++arg_index;
         }
     }
     return result;

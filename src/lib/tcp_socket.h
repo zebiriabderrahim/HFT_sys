@@ -9,9 +9,8 @@
 #define LOW_LATENCY_TRADING_APP_TCP_SOCKET_H
 
 #include "socket_utils.h"
+#include "time_utils.h"
 #include <functional>
-#include <span>
-#include <string>
 #include <vector>
 
 namespace utils {
@@ -121,8 +120,9 @@ class TCPSocket {
      * @brief Sends data through the socket.
      *
      * @param data Span of bytes to send.
+     * @param len Length of the data to send.
      */
-    auto send(const void *data, size_t len) noexcept -> void;
+    auto send(const void *data, std::size_t len) noexcept -> void;
 
     /**
      * @brief Sets the callback function for receive events.

@@ -3,6 +3,7 @@
 #include "socket_utils.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace utils {
 
