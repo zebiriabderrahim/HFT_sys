@@ -85,7 +85,7 @@ struct OMEClientRequest {
  * @brief Represents an order request sent from a public exchange client to the Order Gateway Server
  * @details This structure wraps an OMEClientRequest with an additional sequence number
  */
-struct OGSClientRequest {
+struct OGSClientResponse {
     std::size_t nSeq{0};        ///< Sequence number for ordering requests
     OMEClientRequest omeRequest; ///< The actual order request
 
@@ -102,9 +102,9 @@ struct OGSClientRequest {
 
 /**
  * @brief A lock-free queue for client requests
- * @details Used for passing requests from the Order Server to the Order Matching Engine
+ * @details Used for passing requests from the Order Matching Engine to the Order Server
  */
-using ClientRequestQueue = utils::LFQueue<OMEClientRequest>;
+using ClientResponseQueue = utils::LFQueue<OGSClientResponse>;
 
 } // namespace Exchange
 
