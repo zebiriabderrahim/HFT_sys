@@ -14,14 +14,14 @@
 namespace Exchange {
 
 /**
- * @class MatchingEngineOrder
+ * @class Order
  * @brief Represents a single order in the Order Matching Engine.
  *
  * This class encapsulates all the necessary information for an order
  * within the matching engine, including identifiers, pricing details,
  * and linked list pointers for efficient order book management.
  */
-class MatchingEngineOrder {
+class Order {
   public:
 
     /**
@@ -39,25 +39,32 @@ class MatchingEngineOrder {
         Price price;
         Qty qty;
         Priority priority;
-        MatchingEngineOrder* prev;
-        MatchingEngineOrder* next;
+        Order * prev;
+        Order * next;
     };
 
 
     /**
      * @brief Default constructor
      */
-    MatchingEngineOrder() = default;
+    Order() = default;
 
         /**
-         * @brief Constructs a MatchingEngineOrder with all its attributes
+         * @brief Constructs a Order with all its attributes
          *
          * @param order The order to copy attributes from
          */
-    explicit MatchingEngineOrder(const MEOrder& order) noexcept
+    explicit Order(const MEOrder& order) noexcept
         : tickerId_(order.tickerId), clientId_(order.clientId), clientOrderId_(order.clientOrderId), marketOrderId_(order.marketOrderId),
           side_(order.side), price_(order.price), qty_(order.qty), priority_(order.priority), prev_(order.prev), next_(order.next) {
     }
+
+    explicit Order(TickerID ticker, ClientID client_id, OrderID client_order,
+                   OrderID market_order, Side side, Price price,
+                   Qty qty, Priority priority, Order* prev, Order* next) noexcept
+        : tickerId_(ticker), clientId_(client_id), clientOrderId_(client_order),
+          marketOrderId_(market_order), side_(side), price_(price), qty_(qty),
+          priority_(priority), prev_(prev), next_(next) {}
 
     TickerID tickerId_{TickerID_INVALID};       ///< Financial instrument identifier
     ClientID clientId_{ClientID_INVALID};       ///< Market participant identifier
@@ -68,20 +75,20 @@ class MatchingEngineOrder {
     Qty qty_{Qty_INVALID};                       ///< Quantity still active in the order book
     Priority priority_{Priority_INVALID};        ///< Position in queue with respect to same price_ & side_
 
-    MatchingEngineOrder* prev_{nullptr};  ///< Pointer to previous order at the same price_ level
-    MatchingEngineOrder* next_{nullptr};  ///< Pointer to next_ order at the same price_ level
+    Order * prev_{nullptr};  ///< Pointer to previous order at the same price_ level
+    Order * next_{nullptr};  ///< Pointer to next_ order at the same price_ level
 
     /**
      * @brief Default comparison operator
      */
-    bool operator==(const MatchingEngineOrder&) const = default;
+    bool operator==(const Order &) const = default;
 
     /**
      * @brief Converts the order to a string representation
      * @return A string containing all order details
      */
     [[nodiscard]] std::string to_string() const {
-        return std::format("<MatchingEngineOrder>[ticker: {}, client: {}, oid_client: {}, oid_market: {}, "
+        return std::format("<Order>[ticker: {}, client: {}, oid_client: {}, oid_market: {}, "
                            "side_: {}, price_: {}, qty_: {}, priority_: {}, prev_: {}, next_: {}]",
                            tickerIdToStr(tickerId_), clientIdToStr(clientId_),
                            orderIdToStr(clientOrderId_), orderIdToStr(marketOrderId_),
@@ -94,9 +101,9 @@ class MatchingEngineOrder {
 
 /**
  * @typedef OrderMap
- * @brief Mapping of OrderIDs to MatchingEngineOrder entries in the matching engine
+ * @brief Mapping of OrderIDs to Order entries in the matching engine
  */
-using OrderMap = std::array<MatchingEngineOrder*, Types::MAX_ORDER_IDS>;
+using OrderMap = std::array<Order *, Types::MAX_ORDER_IDS>;
 
 /**
  * @typedef ClientOrderMap
@@ -105,21 +112,21 @@ using OrderMap = std::array<MatchingEngineOrder*, Types::MAX_ORDER_IDS>;
 using ClientOrderMap = std::array<OrderMap, Types::MAX_N_CLIENTS>;
 
 /**
- * @class MatchingEngineOrdersAtPrice
+ * @class OrdersAtPrice
  * @brief Represents all orders at a specific price_ level in the order book
  *
  * This class maintains a linked list of orders at the same price_ level,
  * facilitating efficient matching and order book management.
  */
-class MatchingEngineOrdersAtPrice {
+class OrdersAtPrice {
   public:
     /**
      * @brief Default constructor
      */
-    MatchingEngineOrdersAtPrice() = default;
+    OrdersAtPrice() = default;
 
     /**
-     * @brief Constructs a MatchingEngineOrdersAtPrice with all its attributes
+     * @brief Constructs a OrdersAtPrice with all its attributes
      *
      * @param side Buy or sell side_
      * @param price The price_ level
@@ -127,27 +134,26 @@ class MatchingEngineOrdersAtPrice {
      * @param prev Pointer to the previously more aggressive price_ level
      * @param next Pointer to the next_ more aggressive price_ level
      */
-    MatchingEngineOrdersAtPrice(Side side, Price price, MatchingEngineOrder* order_0,
-                                MatchingEngineOrdersAtPrice* prev, MatchingEngineOrdersAtPrice* next) noexcept
+    OrdersAtPrice(Side side, Price price, Order * order_0, OrdersAtPrice * prev, OrdersAtPrice * next) noexcept
         : side_(side), price_(price), order0_(order_0), prev_(prev), next_(next) {}
 
     /**
      * @brief Default comparison operator
      */
-    bool operator==(const MatchingEngineOrdersAtPrice&) const = default;
+    bool operator==(const OrdersAtPrice &) const = default;
 
     Side side_{Side::INVALID};                         ///< Buy or sell side_
     Price price_{Price_INVALID};                       ///< Price level
-    MatchingEngineOrder* order0_{nullptr};             ///< Pointer to first order, sorted highest -> lowest priority_
-    MatchingEngineOrdersAtPrice* prev_{nullptr};       ///< Pointer to previously more aggressive price_ level
-    MatchingEngineOrdersAtPrice* next_{nullptr};       ///< Pointer to next_ more aggressive price_ level
+    Order * order0_{nullptr};             ///< Pointer to first order, sorted highest -> lowest priority_
+    OrdersAtPrice * prev_{nullptr};       ///< Pointer to previously more aggressive price_ level
+    OrdersAtPrice * next_{nullptr};       ///< Pointer to next_ more aggressive price_ level
 
     /**
      * @brief Converts the price_ level to a string representation
      * @return A string containing all price_ level details
      */
-    [[nodiscard]] std::string to_string() const {
-        return std::format("<MatchingEngineOrdersAtPrice>[side_: {}, price_: {}, order0_: {}, prev_: {}, next_: {}]",
+    [[nodiscard]] std::string toString() const {
+        return std::format("<OrdersAtPrice>[side_: {}, price_: {}, order0_: {}, prev_: {}, next_: {}]",
                            sideToStr(side_), priceToStr(price_), order0_ ? order0_->to_string() : "NULL",
                            priceToStr(prev_ ? prev_->price_ : Price_INVALID),
                            priceToStr(next_ ? next_->price_ : Price_INVALID));
@@ -156,9 +162,9 @@ class MatchingEngineOrdersAtPrice {
 
 /**
  * @typedef OrdersAtPriceMap
- * @brief Mapping of price_ levels to MatchingEngineOrdersAtPrice
+ * @brief Mapping of price_ levels to OrdersAtPrice
  */
-using OrdersAtPriceMap = std::array<MatchingEngineOrdersAtPrice*, Types::MAX_PRICE_LEVELS>;
+using OrdersAtPriceMap = std::array<OrdersAtPrice *, Types::MAX_PRICE_LEVELS>;
 
 } // namespace Exchange
 

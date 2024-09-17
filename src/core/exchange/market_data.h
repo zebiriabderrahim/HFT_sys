@@ -2,8 +2,8 @@
 // Created by ABDERRAHIM ZEBIRI on 2024-09-09.
 //
 
-#ifndef LOW_LATENCY_TRADING_APP_MARKET_DATA_MSGS_H
-#define LOW_LATENCY_TRADING_APP_MARKET_DATA_MSGS_H
+#ifndef LOW_LATENCY_TRADING_APP_MARKET_DATA_H
+#define LOW_LATENCY_TRADING_APP_MARKET_DATA_H
 
 #include <string>
 #include <format>
@@ -116,4 +116,4 @@ using MDPMarketUpdateQueue = utils::LFQueue<MDPMarketUpdate>;
 
 } // namespace Exchange
 
-#endif // LOW_LATENCY_TRADING_APP_MARKET_DATA_MSGS_H
+#endif // LOW_LATENCY_TRADING_APP_MARKET_DATA_H

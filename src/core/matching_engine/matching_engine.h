@@ -5,15 +5,17 @@
 #ifndef LOW_LATENCY_TRADING_APP_MATCHING_ENGINE_H
 #define LOW_LATENCY_TRADING_APP_MATCHING_ENGINE_H
 
+
 #include <thread>
 #include <memory>
 #include <atomic>
 
+#include "../exchange/market_data.h"
+#include "../exchange/order_server_request.h"
+#include "../exchange/order_server_response.h"
+#include "../exchange/types.h"
 #include "lib/lock_free_queue.h"
 #include "lib/logger.h"
-#include "../exchange/types.h"
-#include "../exchange/order_server_msgs.h"
-#include "../exchange/market_data_msgs.h"
 
 #include "order_book.h"
 
@@ -35,15 +37,15 @@ class MatchingEngine {
      * @param txResponses Queue for transmitting responses to client orders.
      * @param txMarketUpdates Queue for pushing market updates to the publisher.
      */
-    MatchingEngine(Exchange::ClientResponseQueue* rxRequests,
-                   Exchange::ClientResponseQueue* txResponses,
-                   Exchange::MarketUpdateQueue* txMarketUpdates) noexcept;
+    MatchingEngine(Exchange::ClientRequestQueue& rxRequests,
+                   Exchange::ClientResponseQueue& txResponses,
+                   Exchange::MarketUpdateQueue& txMarketUpdates) noexcept;
 
     // Rule of five
     MatchingEngine(const MatchingEngine&) = delete;
     MatchingEngine& operator=(const MatchingEngine&) = delete;
-    MatchingEngine(MatchingEngine&&) noexcept = default;
-    MatchingEngine& operator=(MatchingEngine&&) noexcept = default;
+    MatchingEngine(MatchingEngine&&) noexcept = delete;
+    MatchingEngine& operator=(MatchingEngine&&) noexcept = delete;
     ~MatchingEngine();
 
     /**
@@ -58,21 +60,21 @@ class MatchingEngine {
 
     /**
      * @brief Processes a client request received from the order gateway server.
-     * @param request Pointer to the client request to process.
+     * @param request The client request to process.
      */
-    void handleClientRequest(const Exchange::OMEClientRequest* request) noexcept;
+    void handleClientRequest(const Exchange::OMEClientRequest& request) noexcept;
 
     /**
      * @brief Dispatches a response to a client via the order gateway server.
-     * @param response Pointer to the response to send to the client.
+     * @param response The response to send to the client.
      */
-    void dispatchClientResponse(const Exchange::OGSClientResponse* response) noexcept;
+    void dispatchClientResponse(const Exchange::OMEClientResponse& response) noexcept;
 
     /**
      * @brief Dispatches a market update to the market data publisher.
-     * @param update Pointer to the market update to dispatch.
+     * @param update The market update to dispatch.
      */
-    void publishMarketUpdate(const Exchange::OMEMarketUpdate* update) noexcept;
+    void publishMarketUpdate(const Exchange::OMEMarketUpdate& update) noexcept;
 
     /**
      * @brief Checks if the matching engine worker thread is running.
@@ -90,9 +92,9 @@ class MatchingEngine {
     void runMatchingEngine() noexcept;
 
     OrderBookMap orderBookForTicker_;
-    Exchange::ClientResponseQueue* rxRequests_{nullptr};
-    Exchange::ClientResponseQueue* txResponses_{nullptr};
-    Exchange::MarketUpdateQueue* txMarketUpdates_{nullptr};
+    Exchange::ClientRequestQueue& rxRequests_;
+    Exchange::ClientResponseQueue& txResponses_;
+    Exchange::MarketUpdateQueue& txMarketUpdates_;
     std::unique_ptr<std::jthread> matchingEngineThread_{nullptr};
     std::atomic<bool> isRunning_{false};
 };
