@@ -1,8 +1,8 @@
 //
 // Created by ABDERRAHIM ZEBIRI on 2024-09-09.
 //
-#ifndef LOW_LATENCY_TRADING_APP_ORDER_SERVER_MSGS_H
-#define LOW_LATENCY_TRADING_APP_ORDER_SERVER_MSGS_H
+#ifndef LOW_LATENCY_TRADING_APP_ORDER_SERVER_REQUEST_H
+#define LOW_LATENCY_TRADING_APP_ORDER_SERVER_REQUEST_H
 
 #include <string>
 #include <format>
@@ -85,7 +85,7 @@ struct OMEClientRequest {
  * @brief Represents an order request sent from a public exchange client to the Order Gateway Server
  * @details This structure wraps an OMEClientRequest with an additional sequence number
  */
-struct OGSClientResponse {
+struct OGSClientRequest {
     std::size_t nSeq{0};        ///< Sequence number for ordering requests
     OMEClientRequest omeRequest; ///< The actual order request
 
@@ -104,8 +104,8 @@ struct OGSClientResponse {
  * @brief A lock-free queue for client requests
  * @details Used for passing requests from the Order Matching Engine to the Order Server
  */
-using ClientResponseQueue = utils::LFQueue<OGSClientResponse>;
+using ClientRequestQueue = utils::LFQueue<OMEClientRequest>;
 
 } // namespace Exchange
 
-#endif // LOW_LATENCY_TRADING_APP_ORDER_SERVER_MSGS_H
+#endif // LOW_LATENCY_TRADING_APP_ORDER_SERVER_REQUEST_H
