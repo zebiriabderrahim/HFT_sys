@@ -69,8 +69,7 @@ This project is designed to work on both Linux and macOS. However, there are som
 git clone https://github.com/zebiriabderrahim/low_latency_trading_app.git
 cd cpp20-trading-ecosystem
 mkdir build && cd build
-cmake -G Ninja ..
-ninja
+cmake ..
 ```
 ## Performance Considerations
 
