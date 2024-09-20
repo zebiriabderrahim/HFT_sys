@@ -1,24 +1,49 @@
-cmake_minimum_required(VERSION 3.10)
-project(low_latency_trading_app)
+cmake_minimum_required(VERSION 3.27)
+
+project(HFTcore, VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "-std=c++2a -Wall -Wextra -Werror -Wpedantic")
+set(CMAKE_VERBOSE_MAKEFILE on)
 
-#add_subdirectory(benchmark)
+add_subdirectory(src/lib)
+add_subdirectory(src/core)
 
-add_executable(low_latency_trading_app  main.cpp
-                                        utils/thread_util.h
-                                        utils/memory_pool.h
-                                        utils/debug_assertion.h
-                                        utils/lock_free_queue.h
-                                        utils/time_utils.h
-                                        utils/logger.cpp
-                                        utils/logger.h
-                                        utils/socket_utils.h
-        utils/tcp_socket.cpp
-        utils/tcp_socket.h
-        utils/tcp_server.cpp
-        utils/tcp_server.h
+list(APPEND LIBS lib)
+list(APPEND LIBS core)
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/core)
+
+# nitek main target
+file(GLOB HFTcore_SOURCES "src/core/*.cpp")
+add_executable(
+        HFTcore
+        ${HFTcore_SOURCES}
 )
+target_link_libraries(HFTcore PUBLIC ${LIBS})
 
-#target_link_libraries(low_latency_trading_app PRIVATE benchmark::benchmark pthread stdc++)
+# test target with Gtest
+file(GLOB TEST_SOURCES "tests/*.cpp")
+# FetchContent to load and build googletest
+include(FetchContent)
+FetchContent_Declare(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG main
+)
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+
+# declare and link tests target
+enable_testing()
+add_executable(
+        tests
+        ${TEST_SOURCES}
+)
+target_link_libraries(tests PRIVATE gtest gtest_main ${LIBS})
+
+include(GoogleTest)
+gtest_discover_tests(tests)
