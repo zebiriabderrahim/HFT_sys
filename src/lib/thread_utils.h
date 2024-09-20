@@ -15,9 +15,9 @@
 #include <unistd.h>
 #include <thread>
 
-#if defined(_WIN32) || defined(_WIN64)
-#include <windows.h>
-#elif defined(__APPLE__) && defined(__MACH__)
+#include "logger.h"
+
+#if defined(__APPLE__) && defined(__MACH__)
 #include <mach/mach.h>
 #include <mach/thread_policy.h>
 #else
@@ -29,12 +29,7 @@ namespace utils {
 
 inline auto setThreadCoreAffinity(int core_id) -> bool {
 
-#if defined(_WIN32) || defined(_WIN64)
-    // Windows implementation
-    DWORD_PTR mask = 1 << core_id;
-    HANDLE thread = GetCurrentThread();
-    return SetThreadAffinityMask(thread, mask) != 0;
-#elif defined(__APPLE__) && defined(__MACH__)
+#if defined(__APPLE__) && defined(__MACH__)
     // macOS implementation
     thread_affinity_policy_data_t policy = {core_id};
     thread_port_t mach_thread = pthread_mach_thread_np(pthread_self());

@@ -5,7 +5,7 @@
 #include "order_gateway_server.h"
 
 #include "lib/logger.h"
-#include "lib/thread_util.h"
+#include "lib/thread_utils.h"
 
 namespace Exchange {
 

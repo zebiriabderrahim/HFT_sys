@@ -2,7 +2,7 @@
 
 #include "lib/assertion.h"
 #include "lib/logger.h"
-#include "lib/thread_util.h"
+#include "lib/thread_utils.h"
 #include "lib/time_utils.h"
 
 namespace MatchingEngine {
