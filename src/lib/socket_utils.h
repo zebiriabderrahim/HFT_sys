@@ -162,8 +162,11 @@ inline auto joinMulticastGroup(int fd, std::string_view multicastIp, std::string
         }
         if (socketConfig.isListeningMode) {
 
-            sockaddr_in addr{ AF_INET ,{}, htonl(INADDR_ANY),{},{} };
+            sockaddr_in addr = {};  // Zero-initialize all members
+            addr.sin_family = AF_INET;
+            addr.sin_addr.s_addr = htonl(INADDR_ANY);
             addr.sin_port = htons(socketConfig.portNumber);
+
             ASSERT_CONDITION(bind(socketFd, reinterpret_cast<const sockaddr *>(&addr), sizeof(addr)) == 0,
                             "bind() failed. errno: {} ", std::string(strerror(errno)));
         }

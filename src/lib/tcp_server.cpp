@@ -146,7 +146,7 @@ void TCPServer::sendAndReceive() noexcept {
 
 auto TCPServer::addSocketToEventSystem(TCPSocket *socket) const noexcept -> bool {
 #ifdef __linux__
-    epoll_event ev{EPOLLIN | EPOLLOUT | EPOLLET, {.ptr = socket.get()}};
+    epoll_event ev{EPOLLIN | EPOLLOUT | EPOLLET, {.ptr = socket->get()}};
     return epoll_ctl(eventFd_, EPOLL_CTL_ADD, socket->getSocketFd(), &ev) == 0;
 #else
     struct kevent ev[2];
