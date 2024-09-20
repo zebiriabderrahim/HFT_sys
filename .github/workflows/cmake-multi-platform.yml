@@ -16,10 +16,14 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake gcc g++
+        sudo apt-get install -y cmake
+
+    - name: Install GCC 11
+      run: |
+        sudo apt-get install -y gcc-11 g++-11
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-11 -DCMAKE_CXX_COMPILER=g++-11
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config Release
