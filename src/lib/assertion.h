@@ -2,8 +2,8 @@
 // Created by ABDERRAHIM ZEBIRI on 2024-08-08.
 //
 
-#ifndef LOW_LATENCY_TRADING_APP_DEBUG_ASSERTION_H
-#define LOW_LATENCY_TRADING_APP_DEBUG_ASSERTION_H
+#ifndef LOW_LATENCY_TRADING_APP_ASSERTION_H
+#define LOW_LATENCY_TRADING_APP_ASSERTION_H
 
 #include <iostream>
 #include <source_location>
@@ -33,4 +33,9 @@ inline void assertCondition(bool condition, Func&& messageFunc, std::source_loca
  */
 #define ASSERT_CONDITION(cond, ...) assertCondition(cond, [&] { return std::format(__VA_ARGS__); })
 
-#endif // LOW_LATENCY_TRADING_APP_DEBUG_ASSERTION_H
+[[noreturn]] inline auto FATAL(std::string_view msg) noexcept {
+    std::cerr << msg << "\n";
+    exit(EXIT_FAILURE);
+}
+
+#endif // LOW_LATENCY_TRADING_APP_ASSERTION_H

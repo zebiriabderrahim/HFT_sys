@@ -70,5 +70,8 @@ auto TCPSocket::send(const void *data, std::size_t len) noexcept -> void {
     std::memcpy(outboundData_.data() + nextSendValidIndex_, data, len);
     nextSendValidIndex_ += len;
 }
+void TCPSocket::setNextRcvValidIndex(size_t i) {
+        nextRcvValidIndex_ = i;
+}
 
 } // namespace lib

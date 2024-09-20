@@ -89,7 +89,7 @@ class OrderBook {
 
     void matchOrder(Exchange::TickerID tickerId, Exchange::ClientID clientId, Exchange::Side side,
                     Exchange::OrderID clientOrderId, Exchange::OrderID newMarketOid,
-                    Exchange::Order* orderMatched, Exchange::Qty* qtyRemains) noexcept;
+                    Exchange::Order* orderMatched, const Exchange::Qty* qtyRemains) noexcept;
 
     [[nodiscard]] inline Exchange::OrderID getNewMarketOrderId() noexcept {
         return nextMarketOid_++;

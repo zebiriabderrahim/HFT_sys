@@ -131,6 +131,8 @@ class TCPSocket {
      */
     void setRecvCallback(std::function<void(TCPSocket *, Nanos)> callback) noexcept { recvCallback_ = std::move(callback); }
 
+    void setNextRcvValidIndex(size_t i);
+
   private:
     int socketFd_{-1};                                              ///< File descriptor for the socket.
     std::vector<char> outboundData_;                                ///< Buffer for outgoing data.

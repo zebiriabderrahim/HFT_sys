@@ -87,7 +87,7 @@ class MatchingEngine {
   private:
     /**
      * @brief Runs the main matching engine loop.
-     * Processes client requests received from the rxRequests queue.
+     * Processes client requests received from the rxRequests_ queue.
      */
     void runMatchingEngine() noexcept;
 

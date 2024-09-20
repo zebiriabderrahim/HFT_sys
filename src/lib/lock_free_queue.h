@@ -13,8 +13,7 @@
 #include <cstddef>
 #include <optional>
 
-#include "debug_assertion.h"
-
+#include "assertion.h"
 
 namespace utils {
 
@@ -51,12 +50,17 @@ class LFQueue {
         return numElements_.load(std::memory_order_relaxed);
     }
 
-  private:
+    auto updateReadIndex() noexcept -> void {
+        ASSERT_CONDITION(numElements_ > 0, "No elements to read.");
+        nextIndexToRead_ = (nextIndexToRead_ + 1) % queue_.size();
+        numElements_.fetch_sub(1, std::memory_order_relaxed);
+    }
 
     [[nodiscard]] auto getNextToRead() const noexcept -> const T* {
         return numElements_ > 0 ? &queue_[nextIndexToRead_] : nullptr;
     }
 
+  private:
     [[nodiscard]] auto getNextToWrite() noexcept -> T* {
         return numElements_ < queue_.size() ? &queue_[nextIndexToWrite_] : nullptr;
     }
@@ -64,12 +68,6 @@ class LFQueue {
     auto updateWriteIndex() noexcept -> void {
         nextIndexToWrite_ = (nextIndexToWrite_ + 1) % queue_.size();
         numElements_.fetch_add(1, std::memory_order_relaxed);
-    }
-
-    auto updateReadIndex() noexcept -> void {
-        ASSERT_CONDITION(numElements_ > 0, "No elements to read.");
-        nextIndexToRead_ = (nextIndexToRead_ + 1) % queue_.size();
-        numElements_.fetch_sub(1, std::memory_order_relaxed);
     }
 
     std::atomic<std::size_t> nextIndexToRead_{0};

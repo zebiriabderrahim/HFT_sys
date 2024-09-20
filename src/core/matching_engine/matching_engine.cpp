@@ -1,8 +1,8 @@
 #include "matching_engine.h"
 
-#include "lib/debug_assertion.h"
-#include "lib/thread_util.h"
+#include "lib/assertion.h"
 #include "lib/logger.h"
+#include "lib/thread_util.h"
 #include "lib/time_utils.h"
 
 namespace MatchingEngine {
@@ -13,7 +13,7 @@ MatchingEngine::MatchingEngine(Exchange::ClientRequestQueue& rxRequests,
     : rxRequests_(rxRequests),
       txResponses_(txResponses),
       txMarketUpdates_(txMarketUpdates) {
-    orderBookForTicker_.fill(nullptr);
+    //orderBookForTicker_.fill(nullptr);
     for (size_t i = 0; i < orderBookForTicker_.size(); ++i) {
         orderBookForTicker_[i] = std::make_unique<OrderBook>(static_cast<Exchange::TickerID>(i), *this);
     }

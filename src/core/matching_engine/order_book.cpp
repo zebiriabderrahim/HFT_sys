@@ -95,7 +95,7 @@ Exchange::Qty OrderBook::findMatch(Exchange::ClientID clientId, Exchange::OrderI
 void OrderBook::matchOrder(Exchange::TickerID tickerId, Exchange::ClientID clientId,
                            Exchange::Side side, Exchange::OrderID clientOrderId,
                            Exchange::OrderID newMarketOid, Exchange::Order *orderMatched,
-                           Exchange::Qty *qtyRemains) noexcept {
+                           const Exchange::Qty *qtyRemains) noexcept {
     const auto fillQty = std::min(*qtyRemains, orderMatched->qty_);
     qtyRemains -= fillQty;
     orderMatched->qty_ -= fillQty;
@@ -136,13 +136,11 @@ void OrderBook::matchOrder(Exchange::TickerID tickerId, Exchange::ClientID clien
     }
 }
 
-// ... (implement other methods like addOrderToBook, removeOrderFromBook, etc.)
-
 std::string OrderBook::toString(bool isDetailed, bool hasValidityCheck) const {
     std::string result;
     result.reserve(4096);  // Pre-allocate space to avoid frequent reallocations
 
-    auto printer = [&](std::string_view side, const Exchange::OrdersAtPrice* levels,
+    auto printer = [&]([[maybe_unused]]std::string_view side, const Exchange::OrdersAtPrice* levels,
                        Exchange::Side sideEnum, Exchange::Price& lastPrice) {
         Exchange::Qty totalQty{0};
         size_t orderCount = 0;
@@ -220,9 +218,100 @@ std::string OrderBook::toString(bool isDetailed, bool hasValidityCheck) const {
 
     return result;
 }
-void OrderBook::addPriceLevel(Exchange::OrdersAtPrice *newOrdersAtPrice) noexcept {}
-void OrderBook::removePriceLevel(Exchange::Side side, Exchange::Price price) noexcept {}
-void OrderBook::addOrderToBook( Exchange::Order *order) noexcept {}
+
+void OrderBook::addPriceLevel(Exchange::OrdersAtPrice* newOrdersAtPrice) noexcept {
+    // Add new level to hashmap
+    mapPriceToPriceLevel_[priceToIndex(newOrdersAtPrice->price_)] = newOrdersAtPrice;
+
+    auto& bestOrdersByPrice = (newOrdersAtPrice->side_ == Exchange::Side::BUY) ? bidsByPrice_ : asksByPrice_;
+
+    if (!bestOrdersByPrice) [[unlikely]] {
+        // Edge case: side of the book is empty
+        bestOrdersByPrice = newOrdersAtPrice;
+        newOrdersAtPrice->prev_ = newOrdersAtPrice->next_ = newOrdersAtPrice;
+        return;
+    }
+
+    // Find correct insertion point in the doubly-linked list of price levels
+    auto target = bestOrdersByPrice;
+    bool shouldAddAfter = (newOrdersAtPrice->side_ == Exchange::Side::SELL)
+                              ? (newOrdersAtPrice->price_ > target->price_)
+                              : (newOrdersAtPrice->price_ < target->price_);
+
+    if (shouldAddAfter) {
+        do {
+            target = target->next_;
+            shouldAddAfter = (newOrdersAtPrice->side_ == Exchange::Side::SELL)
+                                 ? (newOrdersAtPrice->price_ > target->price_)
+                                 : (newOrdersAtPrice->price_ < target->price_);
+        } while (shouldAddAfter && target != bestOrdersByPrice);
+    }
+
+    // Insert new price level
+    if (shouldAddAfter) {
+        // Insert after target
+        newOrdersAtPrice->prev_ = target;
+        newOrdersAtPrice->next_ = target->next_;
+        target->next_->prev_ = newOrdersAtPrice;
+        target->next_ = newOrdersAtPrice;
+    } else {
+        // Insert before target
+        newOrdersAtPrice->next_ = target;
+        newOrdersAtPrice->prev_ = target->prev_;
+        target->prev_->next_ = newOrdersAtPrice;
+        target->prev_ = newOrdersAtPrice;
+
+        // Check if this new level becomes the best price
+        if ((newOrdersAtPrice->side_ == Exchange::Side::BUY && newOrdersAtPrice->price_ > bestOrdersByPrice->price_) ||
+            (newOrdersAtPrice->side_ == Exchange::Side::SELL && newOrdersAtPrice->price_ < bestOrdersByPrice->price_)) {
+            bestOrdersByPrice = newOrdersAtPrice;
+        }
+    }
+}
+void OrderBook::removePriceLevel(Exchange::Side side, Exchange::Price price) noexcept {
+    auto& bestOrdersByPrice = (side == Exchange::Side::BUY) ? bidsByPrice_ : asksByPrice_;
+    auto ordersAtPrice = getLevelForPrice(price);
+
+    if (ordersAtPrice->next_ == ordersAtPrice) [[unlikely]] {
+        // The book is empty on this side
+        bestOrdersByPrice = nullptr;
+    } else {
+        // Side is not empty; update adjacent pointers
+        ordersAtPrice->prev_->next_ = ordersAtPrice->next_;
+        ordersAtPrice->next_->prev_ = ordersAtPrice->prev_;
+
+        if (ordersAtPrice == bestOrdersByPrice) {
+            bestOrdersByPrice = ordersAtPrice->next_;
+        }
+
+        ordersAtPrice->prev_ = ordersAtPrice->next_ = nullptr;
+    }
+
+    // Remove from hashmap and deallocate block in memory pool
+    mapPriceToPriceLevel_[priceToIndex(price)] = nullptr;
+    ordersAtPricePool_.deallocate(ordersAtPrice);
+}
+
+void OrderBook::addOrderToBook(Exchange::Order* order) noexcept {
+
+    if (auto priceLevel = getLevelForPrice(order->price_); !priceLevel) {
+        // Create a new price level if it doesn't exist
+        order->next_ = order->prev_ = order;
+        auto newPriceLevel = ordersAtPricePool_.allocate(
+            order->side_, order->price_, order, nullptr, nullptr);
+        addPriceLevel(newPriceLevel);
+    } else {
+        // Append new order to the existing price level
+        auto firstOrder = priceLevel->order0_;
+        order->prev_ = firstOrder->prev_;
+        order->next_ = firstOrder;
+        firstOrder->prev_->next_ = order;
+        firstOrder->prev_ = order;
+    }
+
+    // Add mapping to order hashmap for client ID
+    mapClientIdToOrder_[order->clientId_][order->clientOrderId_] = order;
+}
 void OrderBook::removeOrderFromBook(Exchange::Order* order) noexcept {
     auto ordersAtPrice = getLevelForPrice(order->price_);
 

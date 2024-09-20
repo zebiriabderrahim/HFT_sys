@@ -69,7 +69,7 @@ class Logger {
      */
     template <typename... Args>
     void log(LogLevel level, std::string_view format_string, Args&&... args) noexcept {
-        LogElement elem{level, format_string};
+        LogElement elem{level, format_string, {}};
         elem.args.reserve(sizeof...(Args));
         (elem.args.emplace_back(std::forward<Args>(args)), ...);
         logQueue_.push(elem);
