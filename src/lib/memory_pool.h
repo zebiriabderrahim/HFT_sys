@@ -1,15 +1,14 @@
-//
-// Created by ABDERRAHIM ZEBIRI on 2024-08-08.
-//
-#ifndef LOW_LATENCY_TRADING_APP_MEMORY_POOL_H
-#define LOW_LATENCY_TRADING_APP_MEMORY_POOL_H
+#ifndef MEMORY_POOL_H
+#define MEMORY_POOL_H
 
-#include <format>
 #include <vector>
-#include <memory>
-#include "debug_assertion.h"
+#include <cstddef>
+#include <type_traits>
+#include <new>
+#include "assertion.h" // Make sure this header is available in your project
 
 namespace utils {
+
 /**
  * @class MemoryPool
  * @brief A fixed-size memory pool for efficient allocation and deallocation of objects of type T.
@@ -26,9 +25,10 @@ class MemoryPool {
     /**
      * @brief Constructs a MemoryPool with a specified number of memory blocks.
      *
-     * @param size The number of memory blocks to pre-allocate..
+     * @param size The number of memory blocks to pre-allocate.
      */
-    explicit MemoryPool(std::size_t size) noexcept: memoryBlocks_(size) {
+    explicit MemoryPool(std::size_t size) noexcept
+        : memoryBlocks_(size), freeBlocksCount_(size), lastFreedIndex_(0) {
         ASSERT_CONDITION(reinterpret_cast<const MemoryBlock *>(&(memoryBlocks_[0].storage)) == &(memoryBlocks_[0]),
                          "Storage should be first member of MemoryBlock.");
     }
@@ -45,20 +45,26 @@ class MemoryPool {
      *
      * @tparam Args Types of the arguments to forward to T's constructor.
      * @param args Arguments to forward to T's constructor.
-     * @return A pointer to the newly constructed object.
+     * @return A pointer to the newly constructed object, or nullptr if the pool is full.
      */
     template<typename... Args>
     T *allocate(Args &&...args) noexcept {
-         auto memoryBlock = &(memoryBlocks_[nextFreeIndex_]);
+        if (freeBlocksCount_ == 0) {
+            return nullptr;
+        }
 
-         ASSERT_CONDITION(memoryBlock->isFree, "Expected free MemoryBlock at index:{}", std::to_string(nextFreeIndex_));
+        auto memoryBlock = &(memoryBlocks_[nextFreeIndex_]);
+        ASSERT_CONDITION(memoryBlock->isFree, "Expected free MemoryBlock at index:{}", std::to_string(nextFreeIndex_));
 
-         auto *ret = reinterpret_cast<T*>(&(memoryBlock->storage));
-         new (ret) T(std::forward<Args>(args)...); // placement new
-         memoryBlocks_[nextFreeIndex_].isFree = false;
+        auto *ret = reinterpret_cast<T*>(&(memoryBlock->storage));
+        new (ret) T(std::forward<Args>(args)...); // placement new
+        memoryBlock->isFree = false;
+        --freeBlocksCount_;
 
-         updateNextFreeIndex();
-         return ret;
+        if (freeBlocksCount_ > 0) {
+            updateNextFreeIndex();
+        }
+        return ret;
     }
 
     /**
@@ -75,29 +81,61 @@ class MemoryPool {
 
         elem->~T(); // Call destructor
         memoryBlocks_[elemIndex].isFree = true;
+        ++freeBlocksCount_;
+
+        lastFreedIndex_ = elemIndex;
+        nextFreeIndex_ = lastFreedIndex_; // Set nextFreeIndex_ to the most recently freed block
+    }
+
+    /**
+     * @brief Returns the number of free blocks in the pool.
+     *
+     * @return The number of free blocks.
+     */
+    [[nodiscard]] auto getFreeBlocksCount() const noexcept -> std::size_t {
+        return freeBlocksCount_;
+    }
+
+    /**
+     * @brief Returns the total number of blocks in the pool.
+     *
+     * @return The total number of blocks.
+     */
+    [[nodiscard]] auto getTotalBlocksCount() const noexcept -> std::size_t {
+        return memoryBlocks_.size();
     }
 
   private:
     /**
      * @brief Updates the index of the next free memory block.
-     * */
+     *
+     * This method searches for the next free block in the pool, starting from the current
+     * nextFreeIndex_ and wrapping around if necessary. If no free block is found, it triggers
+     * an assertion failure.
+     */
     auto updateNextFreeIndex() noexcept -> void {
-        const auto initialFreeIndex = nextFreeIndex_;
+        if (memoryBlocks_[nextFreeIndex_].isFree) {
+            return; // Current index is already free, no need to update
+        }
+
+        std::size_t startIndex = nextFreeIndex_;
         do {
-            ++nextFreeIndex_;
-            if (nextFreeIndex_ == memoryBlocks_.size()) {
-                nextFreeIndex_ = 0;
-            }
+            nextFreeIndex_ = (nextFreeIndex_ + 1) % memoryBlocks_.size();
             if (memoryBlocks_[nextFreeIndex_].isFree) {
                 return;
             }
-        } while (initialFreeIndex != nextFreeIndex_);
-        ASSERT_CONDITION(false, "Memory Pool out of space.");
+        } while (nextFreeIndex_ != startIndex);
+
+        // If we've gone through all blocks and none are free
+        ASSERT_CONDITION(false, "No free blocks found in Memory Pool.");
     }
 
     /**
      * @struct MemoryBlock
      * @brief Represents a single block of memory in the pool.
+     *
+     * Each MemoryBlock contains storage for an object of type T and a flag indicating
+     * whether the block is currently free or in use.
      */
     struct MemoryBlock {
         std::aligned_storage_t<sizeof(T), alignof(T)> storage; ///< Storage for an object of type T.
@@ -106,8 +144,10 @@ class MemoryPool {
 
     std::vector<MemoryBlock> memoryBlocks_; ///< The pre-allocated memory blocks.
     std::size_t nextFreeIndex_{0}; ///< Index of the next free memory block.
+    std::size_t freeBlocksCount_; ///< Number of free blocks in the pool.
+    std::size_t lastFreedIndex_; ///< Index of the most recently freed block.
 };
 
-} // namespace lib
+} // namespace utils
 
-#endif // LOW_LATENCY_TRADING_APP_MEMORY_POOL_H
+#endif // MEMORY_POOL_H
