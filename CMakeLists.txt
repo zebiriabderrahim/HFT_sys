@@ -15,7 +15,6 @@ list(APPEND LIBS core)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 
-# nitek main target
 file(GLOB HFTcore_SOURCES "src/core/*.cpp")
 add_executable(
         HFTcore

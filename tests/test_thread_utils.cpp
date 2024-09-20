@@ -101,9 +101,11 @@ TEST_F(ThreadUtilTest, CreateAndStartThreadWithAffinity) {
 
 TEST_F(ThreadUtilTest, TerminateOnFailedAffinity) {
     EXPECT_DEATH({
-        createAndStartThread(99999, "TestThread", []() {
+        auto thread = createAndStartThread(99999, "TestThread", []() {
             // This should never run
         });
+        // We don't need to do anything with 'thread', it's just to satisfy the [[nodiscard]] attribute
+        (void)thread; // Suppress unused variable warning
     }, "") << "Thread did not terminate as expected when setting an invalid core affinity";
 }
 
