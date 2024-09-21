@@ -2,7 +2,7 @@
 
 ## Description
 
-HFTCore is a project that implements a simplified version of an electronic trading ecosystem using modern C++20 techniques. It focuses on the most latency-sensitive components to demonstrate low-latency application development in the context of high-frequency trading systems.
+HFT_sys is a project that implements a simplified version of an electronic trading ecosystem using modern C++20 techniques. It focuses on the most latency-sensitive components to demonstrate low-latency application development in the context of high-frequency trading systems.
 
 Inspired by and applying knowledge from:
 - "Building Low Latency Applications with C++" by Sourav Ghosh
