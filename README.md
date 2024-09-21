@@ -1,4 +1,4 @@
-# HFTCore: Modern C++20 Electronic Trading Ecosystem
+# HFT_sys: Modern C++20 Electronic Trading Ecosystem
 
 ## Description
 
@@ -67,7 +67,7 @@ This project is designed to work on both Linux and macOS. However, there are som
 
 ```bash
 git clone https://github.com/zebiriabderrahim/low_latency_trading_app.git
-cd cpp20-trading-ecosystem
+cd HFT_sys
 mkdir build && cd build
 cmake ..
 ```
