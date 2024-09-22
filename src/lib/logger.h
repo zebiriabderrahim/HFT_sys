@@ -75,6 +75,13 @@ class Logger {
         logQueue_.push(elem);
     }
 
+    /**
+     * @brief Set the log file to the specified path, it uses a mutex to ensure thread safety.
+     * @param logFilePath The path to the log file.
+     */
+
+    static void setLogFile(std::string_view logFilePath);
+
   private:
     /**
      * @struct LogElement
@@ -115,7 +122,7 @@ class Logger {
      * @param arg The std::any object to convert.
      * @return A string representation of the argument.
      */
-    auto anyToString(const std::any &arg) const -> std::string;
+    [[nodiscard]] auto anyToString(const std::any &arg) const -> std::string;
 
     /**
      * @brief Formats a message using the given format string and arguments.
@@ -123,13 +130,14 @@ class Logger {
      * @param args The vector of arguments as std::any.
      * @return The formatted string.
      */
-    auto formatMessage(std::string_view format_string, const std::vector<std::any> &args) const -> std::string;
+    [[nodiscard]] auto formatMessage(std::string_view format_string, const std::vector<std::any> &args) const -> std::string;
 
-    std::ofstream logFile_;                    ///< The output file stream for writing logs.
+    static std::ofstream logFile_;                    ///< The output file stream for writing logs.
     LFQueue<LogElement> logQueue_;             ///< The lock-free queue for storing log messages.
     std::unique_ptr<std::jthread> logThread_;  ///< The thread responsible for processing the log queue.
     std::atomic<bool> running_{true};          ///< Flag indicating whether the logger is running.
     std::vector<std::any> argVector_;          ///< Temporary vector for storing arguments during logging.
+    static std::mutex setLogFileMutex_;          ///< Mutex to ensure thread safety when setting the log file.
 };
 
 } // namespace lib

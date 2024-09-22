@@ -3,14 +3,16 @@
 #include "time_utils.h"
 
 #include <format>
+#include <mutex>
 #include <typeindex>
 
-
-
 namespace utils {
+std::ofstream Logger::logFile_;
+std::mutex Logger::setLogFileMutex_;
 
-Logger::Logger(std::string_view logFilePath): logQueue_(LOG_QUEUE_SIZE) {
-    logFile_.open(logFilePath.data(), std::ios::out | std::ios::app);
+Logger::Logger(std::string_view logFilePath): logQueue_(LOG_QUEUE_SIZE){
+    setLogFile(logFilePath);
+//    logFile_.open(logFilePath.data(), std::ios::out | std::ios::app);
     ASSERT_CONDITION(logFile_.is_open(), "Failed to open log file: {}", logFilePath);
     logThread_ = createAndStartThread(-1, "logger {}", [this]{flushQueue();});
     ASSERT_CONDITION(logThread_ != nullptr, "Failed to create logger thread");
@@ -22,6 +24,15 @@ Logger::~Logger() {
         logThread_->join();
     }
     logFile_.close();
+}
+
+void Logger::setLogFile(std::string_view logFilePath) {
+    std::scoped_lock<std::mutex> logFilePathock(setLogFileMutex_);
+    if (logFile_.is_open()) {
+        logFile_.close();
+    }
+    logFile_.open(logFilePath.data(), std::ios::out | std::ios::app);
+    ASSERT_CONDITION(logFile_.is_open(), "Failed to open log file: {}", logFilePath);
 }
 
 void Logger::flushQueue() noexcept {
@@ -124,5 +135,6 @@ Logger &Logger::getInstance(std::string_view logFilePath) {
         static Logger instance(logFilePath);
         return instance;
 }
+
 
 } // namespace lib
