@@ -10,7 +10,7 @@ class SocketUtilsTest : public ::testing::Test {
     int socketFdTcp;
     int socketFdUdp;
 #if defined(__linux__)
-    std::string interfaceName = "lo"
+    std::string interfaceName = "lo";
 #elif defined(__APPLE__)
     std::string interfaceName = "lo0";
 #endif
