@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.27)
 
-project(HFTcore, VERSION 0.1.0)
+project(HFT_sys, VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-std=c++2a -Wall -Wextra -Werror -Wpedantic")
@@ -15,12 +15,12 @@ list(APPEND LIBS core)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 
-file(GLOB HFTcore_SOURCES "src/core/*.cpp")
+file(GLOB HFT_sys_SOURCES "src/core/*.cpp")
 add_executable(
-        HFTcore
-        ${HFTcore_SOURCES}
+        HFT_sys
+        ${HFT_sys_SOURCES}
 )
-target_link_libraries(HFTcore PUBLIC ${LIBS})
+target_link_libraries(HFT_sys PUBLIC ${LIBS})
 
 # test target with Gtest
 file(GLOB TEST_SOURCES "tests/*.cpp")
