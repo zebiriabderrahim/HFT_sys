@@ -11,7 +11,11 @@ class TCPSocketTest : public ::testing::Test {
   protected:
     TCPSocket clientSocket;
     TCPSocket serverSocket;
-    const std::string testInterface = "lo0"; // Use loopback interface for testing
+#if defined(__linux__)
+    std::string testInterface = "lo";
+#elif defined(__APPLE__)
+    std::string testInterface = "lo0";
+#endif
     int testPort;
 
     void SetUp() override {
