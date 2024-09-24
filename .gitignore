@@ -33,7 +33,7 @@
 
 # Debug and Release directories
 cmake-build-debug/
-
+build/
 # .idea directory
 .idea/
 
