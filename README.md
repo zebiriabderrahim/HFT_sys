@@ -1,3 +1,5 @@
+![CI Build Status](https://github.com/zebiriabderrahim/HFT_sys/actions/workflows/cmake-multi-platform.yml/badge.svg)
+
 # HFT_sys: Modern C++20 Electronic Trading Ecosystem
 
 ## Description
