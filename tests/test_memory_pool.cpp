@@ -72,40 +72,43 @@ TEST_F(MemoryPoolTest, DeallocateAll) {
 }
 
 TEST_F(MemoryPoolTest, ConcurrentAllocateAndDeallocate) {
-    constexpr int NUM_THREADS = 1; // memory pool is not thread-safe for now increment this when it is
+    constexpr int NUM_THREADS = 10;
     constexpr int OPS_PER_THREAD = POOL_SIZE * 10;
 
     auto worker = [&]() {
+        // Create thread-local memory pool
+        utils::MemoryPool<TestData> localPool(POOL_SIZE);
+
         std::vector<TestData*> local_allocated;
         for (int i = 0; i < OPS_PER_THREAD; ++i) {
             if (i % 2 == 0 || local_allocated.empty()) {
-                auto* ptr = pool.allocate(i, static_cast<double>(i));
+                auto* ptr = localPool.allocate(i, static_cast<double>(i));
                 if (ptr) local_allocated.push_back(ptr);
             } else {
                 auto* ptr = local_allocated.back();
                 local_allocated.pop_back();
-                pool.deallocate(ptr);
+                localPool.deallocate(ptr);
             }
         }
+
+        // Cleanup remaining allocations
         for (auto* ptr : local_allocated) {
-            pool.deallocate(ptr);
+            localPool.deallocate(ptr);
         }
+
+        // Verify all blocks are free in this thread's pool
+        int allocations = 0;
+        for (std::size_t i = 0; i < POOL_SIZE; ++i) {
+            if (localPool.allocate() != nullptr) allocations++;
+        }
+        EXPECT_EQ(allocations, POOL_SIZE)
+            << "All blocks should be free in thread " << std::this_thread::get_id();
     };
 
     std::vector<std::jthread> threads;
     for (int i = 0; i < NUM_THREADS; ++i) {
         threads.emplace_back(worker);
     }
-
-    for (auto& t : threads) {
-        t.join();
-    }
-
-    int allocations = 0;
-    for (std::size_t i = 0; i < POOL_SIZE; ++i) {
-        if (pool.allocate() != nullptr) allocations++;
-    }
-    EXPECT_EQ(allocations, POOL_SIZE) << "All blocks should be free after concurrent operations";
 }
 
 TEST_F(MemoryPoolTest, OverAllocate) {

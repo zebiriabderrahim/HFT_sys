@@ -30,7 +30,7 @@ class TCPServerTest : public ::testing::Test {
         std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Allow time for port to be released
     }
 
-    int getRandomPort() {
+    int getRandomPort() const {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> dis(10000, 60000); // Range of unprivileged ports

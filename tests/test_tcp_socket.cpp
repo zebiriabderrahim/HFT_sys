@@ -1,7 +1,6 @@
 #include <gtest/gtest.h>
+#include <random>
 #include <thread>
-#include <chrono>
-#include <arpa/inet.h>
 
 #include "lib/tcp_socket.h"
 
@@ -31,8 +30,11 @@ class TCPSocketTest : public ::testing::Test {
         }
     }
 
-    int getRandomPort() {
-        return 10000 + (std::rand() % 50000);
+    int getRandomPort() const {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dis(10000, 60000); // Range of unprivileged ports
+        return dis(gen);
     }
 
     void setupServerSocket() {

@@ -14,49 +14,52 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Install dependencies (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
 
-    - name: Install latest GCC (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt-get install -y gcc-13 g++-13
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 130 --slave /usr/bin/g++ g++ /usr/bin/g++-13
-        sudo update-alternatives --set gcc /usr/bin/gcc-13
+      - name: Check and Install GCC if needed
+        run: |
+          if ! g++ -x c++ -std=c++20 -dM -E - < /dev/null 2>/dev/null | grep -q "__cplusplus.*202002L"; then
+            echo "Installing newer GCC version for C++20 support"
+            if [ "$RUNNER_OS" == "Linux" ]; then
+              sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+              sudo apt-get update
+              sudo apt-get install -y gcc-13 g++-13
+              sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 130 --slave /usr/bin/g++ g++ /usr/bin/g++-13
+              sudo update-alternatives --set gcc /usr/bin/gcc-13
+            elif [ "$RUNNER_OS" == "macOS" ]; then
+              brew install gcc
+              echo 'export PATH="/usr/local/opt/gcc/bin:$PATH"' >> $GITHUB_ENV
+            fi
+          else
+            echo "Current GCC version already supports C++20"
+          fi
+          gcc --version
 
-    - name: Install GCC 14 (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew update
-        brew install gcc@14
-        echo 'export PATH="/usr/local/opt/gcc@14/bin:$PATH"' >> $GITHUB_ENV
+      - name: Configure CMake (Ubuntu)
+        if: runner.os == 'Linux'
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
 
-    - name: Configure CMake (Ubuntu)
-      if: runner.os == 'Linux'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+      - name: Configure CMake (macOS)
+        if: runner.os == 'macOS'
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
 
-    - name: Configure CMake (macOS)
-      if: runner.os == 'macOS'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release
+      - name: Run tests
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C Release --output-on-failure
 
-    - name: Run tests
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C Release --output-on-failure
+      - name: Print GCC version (Ubuntu)
+        if: runner.os == 'Linux'
+        run: gcc --version
 
-    - name: Print GCC version (Ubuntu)
-      if: runner.os == 'Linux'
-      run: gcc --version
-
-    - name: Print GCC version (macOS)
-      if: runner.os == 'macOS'
-      run: gcc-14 --version
+      - name: Print GCC version (macOS)
+        if: runner.os == 'macOS'
+        run: gcc-14 --version
