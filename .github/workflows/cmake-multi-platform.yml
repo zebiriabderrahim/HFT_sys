@@ -14,49 +14,33 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Install dependencies (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake
+      - name: Check C++20 Support
+        run: |
+          if ! g++ -std=c++20 -dM -E - < /dev/null | grep -q "__cplusplus.*202002L"; then
+            echo "Current GCC version does not support C++20"
+            exit 1
+          fi
+          gcc --version
 
-    - name: Install latest GCC (Ubuntu)
-      if: runner.os == 'Linux'
-      run: |
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-        sudo apt-get update
-        sudo apt-get install -y gcc-13 g++-13
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 130 --slave /usr/bin/g++ g++ /usr/bin/g++-13
-        sudo update-alternatives --set gcc /usr/bin/gcc-13
+      - name: Install dependencies (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
 
-    - name: Install GCC 14 (macOS)
-      if: runner.os == 'macOS'
-      run: |
-        brew update
-        brew install gcc@14
-        echo 'export PATH="/usr/local/opt/gcc@14/bin:$PATH"' >> $GITHUB_ENV
+      - name: Configure CMake
+        run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+          else
+            cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+          fi
 
-    - name: Configure CMake (Ubuntu)
-      if: runner.os == 'Linux'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build ${{github.workspace}}/build --config Release
 
-    - name: Configure CMake (macOS)
-      if: runner.os == 'macOS'
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14
-
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config Release
-
-    - name: Run tests
-      working-directory: ${{github.workspace}}/build
-      run: ctest -C Release --output-on-failure
-
-    - name: Print GCC version (Ubuntu)
-      if: runner.os == 'Linux'
-      run: gcc --version
-
-    - name: Print GCC version (macOS)
-      if: runner.os == 'macOS'
-      run: gcc-14 --version
+      - name: Test
+        working-directory: ${{github.workspace}}/build
+        run: ctest -C Release --output-on-failure
